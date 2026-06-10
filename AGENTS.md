@@ -15,3 +15,43 @@
 - 图画生成：fal.ai FLUX dev API
 
 参照最新文档。
+
+## Ebiten代码规则
+
+**`internal/component/` 禁止 import ebiten。**
+
+游戏逻辑代码应放在不依赖ebiten的包中，确保可直接`go test`。
+
+### 验证方法
+
+```bash
+go list -f '{{.Imports}}' ./internal/component/... | grep ebiten
+# 无输出 = 通过
+```
+
+### 架构
+
+```
+internal/
+├── component/    # 禁止ebiten，纯数据结构
+├── game/         # 可用ebiten
+├── input/        # 可用ebiten
+├── render/       # 可用ebiten
+├── entity/       # 可用ebiten
+└── scene/        # 可用ebiten
+```
+
+### 测试示例
+
+```go
+// internal/component/health_test.go
+func TestHealth_TakeDamage(t *testing.T) {
+    h := &Health{Current: 100, Max: 100}
+    h.TakeDamage(30)
+    if h.Current != 70 {
+        t.Errorf("expected 70, got %d", h.Current)
+    }
+}
+```
+
+直接 `go test ./internal/component/...`，无需图形环境。
