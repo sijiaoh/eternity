@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/joho/godotenv"
 )
 
 const (
@@ -27,6 +29,9 @@ type FalResponse struct {
 }
 
 func main() {
+	// Load .env file if present. Does not override existing environment variables.
+	_ = godotenv.Load()
+
 	if len(os.Args) < 2 {
 		fmt.Fprintln(os.Stderr, "Usage: image-generator <path-to-image>.prompt.md")
 		os.Exit(1)
