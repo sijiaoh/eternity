@@ -1,0 +1,24 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Claude Code (local settings only)
+.claude/settings.local.json
+
+# Pockode
+.pockode/*
+!.pockode/agent-roles
+.pockode/agent-roles/*
+!.pockode/agent-roles/index.json
