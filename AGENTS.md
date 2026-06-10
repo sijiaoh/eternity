@@ -18,6 +18,12 @@
 
 ## 图画
 
-图画将使用AI生成。
-放置prompt至`[path-to-image].prompt.md`。
-使用image-generator tool指定prompt生成图画。
+图画使用AI生成（fal.ai FLUX dev API）。
+
+### 使用方法
+
+1. 创建prompt文件：`[path-to-image].prompt.md`
+2. 设置环境变量：`export FAL_KEY=your-api-key`
+3. 生成图画：`go run ./cmd/image-generator [path-to-image].prompt.md`
+
+生成的PNG文件将保存至 `[path-to-image].png`。
