@@ -28,13 +28,13 @@
     {
       "id": "019c7fe3-7963-78c6-9e52-9fa65baff731",
       "name": "画家",
-      "role_prompt": "网络知名画家。\n精通AI绘画prompt。",
+      "role_prompt": "网络知名画家。\n精通各类网络上的免费素材。\n精通AI绘画prompt。",
       "steps": [
-        "编写prompt。",
-        "使用image-generator生成图像。"
+        "编写prompt，或者获取免费素材。",
+        "使用image-generator生成图像，或者更新`[path-to-image].source.md。"
       ],
       "created_at": "2026-02-21T20:09:00.131539+09:00",
-      "updated_at": "2026-06-10T09:32:59.308243887Z"
+      "updated_at": "2026-06-10T16:44:07.891073714Z"
     },
     {
       "id": "019c99d0-d0d3-73f7-8271-c1389b720fe6",
