@@ -13,7 +13,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-// BattleScene implements a battle scene with infinite scrolling floor.
 type BattleScene struct {
 	clock     *component.Clock
 	floorTile *ebiten.Image
@@ -25,9 +24,17 @@ type BattleScene struct {
 	player    *entity.Player
 }
 
-// NewBattleScene creates a new battle scene with the given floor tile image.
-func NewBattleScene(fsys fs.FS, floorImagePath string) (*BattleScene, error) {
-	f, err := fsys.Open(floorImagePath)
+type BattleSceneConfig struct {
+	FloorImagePath      string
+	PlayerSpriteSheet   *ebiten.Image
+	PlayerSpriteColumns int
+	PlayerFrameWidth    int
+	PlayerFrameHeight   int
+	PlayerAnimFPS       float64
+}
+
+func loadImage(fsys fs.FS, path string) (*ebiten.Image, error) {
+	f, err := fsys.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -37,17 +44,30 @@ func NewBattleScene(fsys fs.FS, floorImagePath string) (*BattleScene, error) {
 	if err != nil {
 		return nil, err
 	}
+	return ebiten.NewImageFromImage(img), nil
+}
 
-	tile := ebiten.NewImageFromImage(img)
-	bounds := img.Bounds()
+func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
+	tile, err := loadImage(fsys, cfg.FloorImagePath)
+	if err != nil {
+		return nil, err
+	}
+
+	playerCfg := entity.PlayerConfig{
+		SpriteSheet: cfg.PlayerSpriteSheet,
+		FrameWidth:  cfg.PlayerFrameWidth,
+		FrameHeight: cfg.PlayerFrameHeight,
+		Columns:     cfg.PlayerSpriteColumns,
+		AnimFPS:     cfg.PlayerAnimFPS,
+	}
 
 	return &BattleScene{
 		clock:     component.NewClock(),
 		floorTile: tile,
-		tileSize:  bounds.Dx(),
+		tileSize:  tile.Bounds().Dx(),
 		scrollX:   50, // pixels per second
 		scrollY:   30, // pixels per second
-		player:    entity.NewPlayer(config.ScreenWidth/2, config.ScreenHeight/2),
+		player:    entity.NewPlayer(config.ScreenWidth/2, config.ScreenHeight/2, playerCfg),
 	}, nil
 }
 
