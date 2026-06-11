@@ -44,17 +44,22 @@ x := config.UnitsToPixels(pos.X) // 用于 DrawImage
 
 ## 时间系统
 
+**禁止依赖固定帧率**。所有游戏逻辑必须基于时间（秒），而非帧数。
+
 ### deltaTime规范
 
-所有与时间相关的计算必须使用deltaTime，不能依赖固定帧率。
-
 ```go
-// ✅ 正确：速度单位为"单位/秒"
-speed := 5.0 // units per second
-dx := speed * deltaTime
+// ✅ 正确
+func (p *Player) Update(dt float64) {
+    p.Position.X += p.velocity * dt  // velocity: units/s
+}
 
-// ❌ 错误：假设固定帧率
-dx := 0.083 // 假设60fps
+// ❌ 错误
+func (p *Player) Update() {
+    p.Position.X += p.velocity / 60.0  // 硬编码帧率
+}
+frameCount++; if frameCount >= 60 { ... }  // 帧计数器
+cooldown := 120  // 用帧数表示2秒
 ```
 
 **scene层获取deltaTime**：
@@ -63,8 +68,6 @@ s.clock.Update(1.0 / float64(ebiten.TPS()))
 dt := s.clock.DeltaTime()
 player.Update(dt)
 ```
-
-注：Ebitengine使用固定时间步长，使用`1.0/ebiten.TPS()`而非`ActualTPS()`。
 
 ### 时间缩放
 
