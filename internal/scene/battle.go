@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"ebiten-agent-example/internal/config"
+	"ebiten-agent-example/internal/entity"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -19,6 +20,7 @@ type BattleScene struct {
 	offsetY   float64
 	scrollX   float64
 	scrollY   float64
+	player    *entity.Player
 }
 
 // NewBattleScene creates a new battle scene with the given floor tile image.
@@ -42,6 +44,7 @@ func NewBattleScene(floorImagePath string) (*BattleScene, error) {
 		tileSize:  bounds.Dx(),
 		scrollX:   50, // pixels per second
 		scrollY:   30, // pixels per second
+		player:    entity.NewPlayer(config.ScreenWidth/2, config.ScreenHeight/2),
 	}, nil
 }
 
@@ -51,7 +54,7 @@ func (s *BattleScene) Update() error {
 	s.offsetY += s.scrollY / tps
 	s.offsetX = math.Mod(s.offsetX, float64(s.tileSize))
 	s.offsetY = math.Mod(s.offsetY, float64(s.tileSize))
-	return nil
+	return s.player.Update()
 }
 
 func (s *BattleScene) Draw(screen *ebiten.Image) {
@@ -68,4 +71,5 @@ func (s *BattleScene) Draw(screen *ebiten.Image) {
 			screen.DrawImage(s.floorTile, op)
 		}
 	}
+	s.player.Draw(screen)
 }
