@@ -1,14 +1,67 @@
+# 图像素材管理
+
 ## 免费素材
 
 从网络下载免费素材时，需要注意版权问题。
 由于这是一个开源项目，牵扯到再分发，所以必须使用CC0协议的素材。
-并且把下载URL以及版权信息记录在`[path-to-image].source.md`文件中。
+并且把下载URL以及版权信息记录在`[素材名].source.md`文件中。
+
+### `.source.md` 格式要求
+
+```markdown
+# 素材名称
+
+## 来源
+
+- **URL**: [下载链接]
+- **作者**: [作者名] ([作者链接])
+- **许可证**: CC0 1.0 (Public Domain)
+
+## 许可证说明
+
+[对许可证的简要说明]
+
+## 素材内容
+
+- `文件名.png` - 说明
+
+## 原始 README
+
+[原始版权声明]
+```
 
 ## 图像生成
 
-创建`[path-to-image].prompt.md`文件，并指定此文件调用image-generator工具。
+使用AI生成图像时，创建`[素材名].prompt.md`文件记录生成参数。
+
+### `.prompt.md` 格式要求
+
+```markdown
+# 素材名称
+
+## 生成工具
+
+- **API**: [使用的API，如 fal.ai FLUX dev]
+- **模型**: [模型名称]
+
+## Prompt
+
+[生成时使用的prompt]
+
+## 参数
+
+- **尺寸**: [宽x高]
+- **其他参数**: [如有]
+
+## 素材内容
+
+- `文件名.png` - 说明
+```
 
 ## 整理
 
 素材应该合理的放置，按照domain整理文件夹。
-图片的同阶层必须有同名的`souce.md`或者`prompt.md`。
+素材的同阶层必须有同名的`.source.md`或者`.prompt.md`。
+
+- 单个图片：`image.png` → `image.source.md`
+- 素材目录：`charDemo/` → `charDemo.source.md`
