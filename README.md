@@ -1,4 +1,4 @@
-# Ebiten Agent Example
+# Eternity
 
 Vampire Survivors 风格的生存游戏。玩家控制角色在地图上击败敌人、收集道具和升级，目标是尽可能长时间生存并获得高分。
 

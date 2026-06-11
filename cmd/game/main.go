@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"ebiten-agent-example/internal/config"
-	"ebiten-agent-example/internal/game"
+	"eternity/internal/config"
+	"eternity/internal/game"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )

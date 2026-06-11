@@ -3,7 +3,7 @@ package component
 import (
 	"math"
 
-	"ebiten-agent-example/internal/config"
+	"eternity/internal/config"
 )
 
 // Camera follows a target position and provides world-to-screen conversion.

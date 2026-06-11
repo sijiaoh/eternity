@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-# Setup script for ebiten-agent-example
+# Setup script for Eternity
 # Supports Ubuntu and macOS
 
 detect_os() {
@@ -44,7 +44,7 @@ install_xvfb() {
 }
 
 main() {
-    echo "=== ebiten-agent-example setup ==="
+    echo "=== Eternity setup ==="
 
     local os
     os=$(detect_os)

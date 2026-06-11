@@ -1,4 +1,4 @@
-module ebiten-agent-example
+module eternity
 
 go 1.24.4
 

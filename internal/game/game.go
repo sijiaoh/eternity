@@ -4,9 +4,9 @@ import (
 	"image"
 	_ "image/png"
 
-	"ebiten-agent-example/assets"
-	"ebiten-agent-example/internal/config"
-	"ebiten-agent-example/internal/scene"
+	"eternity/assets"
+	"eternity/internal/config"
+	"eternity/internal/scene"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )

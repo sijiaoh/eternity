@@ -3,8 +3,8 @@ package entity
 import (
 	"image"
 
-	"ebiten-agent-example/internal/component"
-	"ebiten-agent-example/internal/config"
+	"eternity/internal/component"
+	"eternity/internal/config"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )

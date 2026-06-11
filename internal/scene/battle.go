@@ -6,9 +6,9 @@ import (
 	"io/fs"
 	"math"
 
-	"ebiten-agent-example/internal/component"
-	"ebiten-agent-example/internal/config"
-	"ebiten-agent-example/internal/entity"
+	"eternity/internal/component"
+	"eternity/internal/config"
+	"eternity/internal/entity"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )

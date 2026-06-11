@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"ebiten-agent-example/internal/config"
+	"eternity/internal/config"
 )
 
 func TestCamera_SnapTo(t *testing.T) {
