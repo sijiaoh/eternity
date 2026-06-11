@@ -25,7 +25,7 @@
 ### 验证方法
 
 ```bash
-go list -f '{{.Imports}}' ./internal/component/... | grep ebiten
+go list -f '{{.Imports}}' ./internal/component/... ./internal/config/... | grep ebiten
 # 无输出 = 通过
 ```
 
@@ -34,6 +34,7 @@ go list -f '{{.Imports}}' ./internal/component/... | grep ebiten
 ```
 internal/
 ├── component/    # 禁止ebiten，纯数据结构
+├── config/       # 禁止ebiten，全局配置常量
 ├── game/         # 可用ebiten
 ├── input/        # 可用ebiten
 ├── render/       # 可用ebiten

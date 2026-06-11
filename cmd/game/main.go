@@ -3,15 +3,19 @@ package main
 import (
 	"log"
 
+	"ebiten-agent-example/internal/config"
 	"ebiten-agent-example/internal/game"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
 func main() {
-	g := game.New()
+	g, err := game.New()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	ebiten.SetWindowSize(game.ScreenWidth, game.ScreenHeight)
+	ebiten.SetWindowSize(config.ScreenWidth, config.ScreenHeight)
 	ebiten.SetWindowTitle("Vampire Survivors Clone")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 
