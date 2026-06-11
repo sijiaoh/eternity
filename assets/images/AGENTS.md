@@ -60,8 +60,28 @@
 
 ## 整理
 
-素材应该合理的放置，按照领域模型整理文件夹。
-素材的同阶层必须有同名的`.source.md`或者`.prompt.md`。
+素材应该按照领域模型组织，而非按下载来源组织。
+每个图片文件必须有同名的`.source.md`或`.prompt.md`（不允许目录单位的source文件）。
 
-- 单个图片：`image.png` → `image.source.md`
-- 素材目录：`charDemo/` → `charDemo.source.md`
+### 目录结构示例
+
+```
+assets/images/
+└── characters/
+    ├── hero/
+    │   ├── sprite.png
+    │   ├── sprite.source.md
+    │   ├── portrait.png
+    │   └── portrait.source.md
+    └── enemy/
+        ├── sprite.png
+        ├── sprite.source.md
+        ├── portrait.png
+        └── portrait.source.md
+```
+
+### 命名规则
+
+- 目录按领域模型命名：`characters/hero/`、`characters/enemy/`、`ui/buttons/`
+- 图片按用途命名：`sprite.png`、`portrait.png`、`icon.png`
+- 每个图片都需要对应的 `.source.md` 或 `.prompt.md`
