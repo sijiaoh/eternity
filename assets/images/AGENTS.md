@@ -7,3 +7,8 @@
 ## 图像生成
 
 创建`[path-to-image].prompt.md`文件，并指定此文件调用image-generator工具。
+
+## 整理
+
+素材应该合理的放置，按照domain整理文件夹。
+图片的同阶层必须有同名的`souce.md`或者`prompt.md`。
