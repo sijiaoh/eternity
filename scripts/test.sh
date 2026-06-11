@@ -8,7 +8,7 @@ OS="$(uname -s)"
 TEST_TARGET="${1:-./...}"
 
 run_tests() {
-    go test -v "$TEST_TARGET"
+    CGO_ENABLED=1 go test -v "$TEST_TARGET"
 }
 
 case "$OS" in

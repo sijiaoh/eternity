@@ -19,26 +19,29 @@ install_go_deps() {
     echo "Go dependencies installed."
 }
 
-install_xvfb() {
+install_linux_deps() {
+    echo "Installing Linux dependencies..."
+    if command -v apt-get &> /dev/null; then
+        sudo apt-get update
+        sudo apt-get install -y gcc xvfb xorg-dev
+        echo "Linux dependencies installed."
+    else
+        echo "Warning: apt-get not found. Please install gcc, xvfb and xorg-dev manually."
+    fi
+}
+
+install_system_deps() {
     local os=$1
 
     case "$os" in
         linux)
-            echo "Installing Xvfb..."
-            if command -v apt-get &> /dev/null; then
-                sudo apt-get update
-                sudo apt-get install -y xvfb
-                echo "Xvfb installed."
-            else
-                echo "Warning: apt-get not found. Please install Xvfb manually."
-            fi
+            install_linux_deps
             ;;
         macos)
-            echo "Xvfb is not required on macOS (native display available)."
-            echo "For headless testing, consider using XQuartz if needed."
+            echo "No additional system dependencies required on macOS."
             ;;
         *)
-            echo "Warning: Unknown OS. Skipping Xvfb installation."
+            echo "Warning: Unknown OS. Skipping system dependency installation."
             ;;
     esac
 }
@@ -51,7 +54,7 @@ main() {
     echo "Detected OS: $os"
 
     install_go_deps
-    install_xvfb "$os"
+    install_system_deps "$os"
 
     echo "=== Setup complete ==="
 }
