@@ -15,12 +15,9 @@ import (
 
 type BattleScene struct {
 	clock     *component.Clock
+	camera    *component.Camera
 	floorTile *ebiten.Image
 	tileSize  int
-	offsetX   float64
-	offsetY   float64
-	scrollX   float64
-	scrollY   float64
 	player    *entity.Player
 }
 
@@ -61,24 +58,23 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		AnimFPS:     cfg.PlayerAnimFPS,
 	}
 
+	playerX := config.PixelsToUnits(config.ScreenWidth / 2)
+	playerY := config.PixelsToUnits(config.ScreenHeight / 2)
+
 	return &BattleScene{
 		clock:     component.NewClock(),
+		camera:    component.NewCamera(playerX, playerY, 0.1),
 		floorTile: tile,
 		tileSize:  tile.Bounds().Dx(),
-		scrollX:   50, // pixels per second (visual offset, not world position)
-		scrollY:   30, // pixels per second (visual offset, not world position)
-		player:    entity.NewPlayer(config.PixelsToUnits(config.ScreenWidth/2), config.PixelsToUnits(config.ScreenHeight/2), playerCfg),
+		player:    entity.NewPlayer(playerX, playerY, playerCfg),
 	}, nil
 }
 
 func (s *BattleScene) Update() error {
 	s.clock.Update(1.0 / float64(ebiten.TPS()))
 	dt := s.clock.DeltaTime()
-	s.offsetX += s.scrollX * dt
-	s.offsetY += s.scrollY * dt
-	s.offsetX = math.Mod(s.offsetX, float64(s.tileSize))
-	s.offsetY = math.Mod(s.offsetY, float64(s.tileSize))
 	s.player.Update(dt)
+	s.camera.Update(s.player.Position.X, s.player.Position.Y, dt)
 	return nil
 }
 
@@ -99,18 +95,27 @@ func (s *BattleScene) IsPaused() bool {
 }
 
 func (s *BattleScene) Draw(screen *ebiten.Image) {
+	offsetX, offsetY := s.camera.GetOffset()
 	ts := float64(s.tileSize)
+
+	// Calculate tile offset for seamless scrolling (always positive)
+	tileOffsetX := offsetX - math.Floor(offsetX/ts)*ts
+	tileOffsetY := offsetY - math.Floor(offsetY/ts)*ts
+
 	tilesX := int(math.Ceil(float64(config.ScreenWidth)/ts)) + 2
 	tilesY := int(math.Ceil(float64(config.ScreenHeight)/ts)) + 2
 
 	for y := 0; y < tilesY; y++ {
 		for x := 0; x < tilesX; x++ {
 			op := &ebiten.DrawImageOptions{}
-			drawX := float64(x)*ts - ts + s.offsetX
-			drawY := float64(y)*ts - ts + s.offsetY
+			drawX := float64(x)*ts - ts - tileOffsetX
+			drawY := float64(y)*ts - ts - tileOffsetY
 			op.GeoM.Translate(drawX, drawY)
 			screen.DrawImage(s.floorTile, op)
 		}
 	}
-	s.player.Draw(screen)
+
+	// Draw player relative to camera
+	screenX, screenY := s.camera.WorldToScreen(s.player.Position.X, s.player.Position.Y)
+	s.player.DrawAt(screen, screenX, screenY)
 }

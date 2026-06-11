@@ -123,10 +123,15 @@ func (p *Player) updateAnimationState() {
 }
 
 func (p *Player) Draw(screen *ebiten.Image) {
-	frame := p.getFrame(p.Animation.Frame())
 	pixelX := config.UnitsToPixels(p.Position.X)
 	pixelY := config.UnitsToPixels(p.Position.Y)
-	p.Sprite.DrawFrame(screen, frame, pixelX, pixelY)
+	p.DrawAt(screen, pixelX, pixelY)
+}
+
+// DrawAt draws the player at the specified screen pixel coordinates.
+func (p *Player) DrawAt(screen *ebiten.Image, screenX, screenY float64) {
+	frame := p.getFrame(p.Animation.Frame())
+	p.Sprite.DrawFrame(screen, frame, screenX, screenY)
 }
 
 func (p *Player) getFrame(index int) *ebiten.Image {
