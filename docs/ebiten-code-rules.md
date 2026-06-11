@@ -15,6 +15,33 @@
 1. **组合优于继承**：entity通过嵌入component组合功能
 2. **单向依赖**：高层依赖低层（scene→entity→component），禁止反向
 
+## 单位系统
+
+使用世界单位（units）而非像素，便于物理计算和数值调整。
+
+| 常量/函数 | 说明 |
+|-----------|------|
+| `PixelsPerUnit = 48` | 1单位 = 48像素（与角色/tile尺寸一致） |
+| `UnitsToPixels()` | 绘制时转换位置 |
+| `PixelsToUnits()` | 初始化时转换像素值 |
+
+### 单位边界
+
+| 层级 | 单位 | 示例 |
+|------|------|------|
+| 游戏逻辑 | 单位 | Position、Speed（5 units/s） |
+| Ebiten接口 | 像素 | ScreenWidth、Draw坐标 |
+| 视觉效果 | 像素 | scrollX/Y、偏移量 |
+
+```go
+// ✅ 正确：位置和速度使用单位
+pos := component.NewPosition(2.0, 3.0) // 世界坐标 (2, 3) 单位
+speed := 5.0                            // 5 units/s
+
+// ✅ 绘制时转换为像素
+x := config.UnitsToPixels(pos.X) // 用于 DrawImage
+```
+
 ## 时间系统
 
 ### deltaTime规范
@@ -22,12 +49,12 @@
 所有与时间相关的计算必须使用deltaTime，不能依赖固定帧率。
 
 ```go
-// ✅ 正确：速度单位为"像素/秒"
-speed := 240.0 // pixels per second
+// ✅ 正确：速度单位为"单位/秒"
+speed := 5.0 // units per second
 dx := speed * deltaTime
 
 // ❌ 错误：假设固定帧率
-dx := 4.0 // 假设60fps
+dx := 0.083 // 假设60fps
 ```
 
 **scene层获取deltaTime**：

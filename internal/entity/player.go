@@ -4,12 +4,13 @@ import (
 	"image"
 
 	"ebiten-agent-example/internal/component"
+	"ebiten-agent-example/internal/config"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
 const (
-	playerSpeed = 240.0 // pixels per second (≈4 pixels at 60fps)
+	playerSpeed = 5.0 // units per second
 )
 
 type Facing int
@@ -123,7 +124,9 @@ func (p *Player) updateAnimationState() {
 
 func (p *Player) Draw(screen *ebiten.Image) {
 	frame := p.getFrame(p.Animation.Frame())
-	p.Sprite.DrawFrame(screen, frame, p.Position.X, p.Position.Y)
+	pixelX := config.UnitsToPixels(p.Position.X)
+	pixelY := config.UnitsToPixels(p.Position.Y)
+	p.Sprite.DrawFrame(screen, frame, pixelX, pixelY)
 }
 
 func (p *Player) getFrame(index int) *ebiten.Image {

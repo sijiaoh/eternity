@@ -65,9 +65,9 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		clock:     component.NewClock(),
 		floorTile: tile,
 		tileSize:  tile.Bounds().Dx(),
-		scrollX:   50, // pixels per second
-		scrollY:   30, // pixels per second
-		player:    entity.NewPlayer(config.ScreenWidth/2, config.ScreenHeight/2, playerCfg),
+		scrollX:   50, // pixels per second (visual offset, not world position)
+		scrollY:   30, // pixels per second (visual offset, not world position)
+		player:    entity.NewPlayer(config.PixelsToUnits(config.ScreenWidth/2), config.PixelsToUnits(config.ScreenHeight/2), playerCfg),
 	}, nil
 }
 

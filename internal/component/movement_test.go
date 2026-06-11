@@ -6,8 +6,8 @@ import (
 )
 
 func TestMovement_CalcDelta_BasicDirections(t *testing.T) {
-	m := NewMovement(100.0) // 100 pixels/second
-	dt := 1.0               // 1 second -> expect 100 pixels
+	m := NewMovement(100.0) // 100 units/second
+	dt := 1.0               // 1 second -> expect 100 units
 
 	tests := []struct {
 		name   string
@@ -48,7 +48,7 @@ func TestMovement_DiagonalNormalized(t *testing.T) {
 }
 
 func TestMovement_DistanceProportionalToTime(t *testing.T) {
-	m := NewMovement(60.0) // 60 pixels/second
+	m := NewMovement(60.0) // 60 units/second
 	dir := MoveDirection{Right: true}
 
 	// Core spec: distance = speed × time
@@ -56,10 +56,10 @@ func TestMovement_DistanceProportionalToTime(t *testing.T) {
 		dt       float64
 		wantDist float64
 	}{
-		{1.0 / 60.0, 1.0}, // 60fps: 1 pixel per frame
-		{1.0 / 30.0, 2.0}, // 30fps: 2 pixels per frame
-		{1.0, 60.0},       // 1 second: 60 pixels
-		{0.5, 30.0},       // 0.5 seconds: 30 pixels
+		{1.0 / 60.0, 1.0}, // 60fps: 1 unit per frame
+		{1.0 / 30.0, 2.0}, // 30fps: 2 units per frame
+		{1.0, 60.0},       // 1 second: 60 units
+		{0.5, 30.0},       // 0.5 seconds: 30 units
 	}
 
 	for _, tt := range tests {

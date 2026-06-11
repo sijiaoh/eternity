@@ -5,7 +5,7 @@ type MoveDirection struct {
 }
 
 type Movement struct {
-	Speed float64 // pixels per second
+	Speed float64 // units per second
 }
 
 func NewMovement(speed float64) *Movement {
