@@ -7,11 +7,38 @@ Vampire Survivors 风格的生存游戏。玩家控制角色在地图上击败�
 - Go
 - Ebiten v2.9.9
 
-## 运行
+## 开发
+
+### 环境初始化
+
+```bash
+./scripts/setup.sh
+```
+
+自动安装Go依赖和平台特定工具（Ubuntu上安装Xvfb用于headless测试）。
+
+### 运行
 
 ```bash
 go run ./cmd/game
 ```
+
+### 测试
+
+```bash
+./scripts/test.sh                     # 运行所有测试
+./scripts/test.sh ./internal/entity/  # 指定测试目标
+```
+
+Ubuntu上自动使用Xvfb进行headless执行。
+
+### 代码检查
+
+```bash
+./scripts/lint.sh
+```
+
+运行gofmt、go vet及golangci-lint（如已安装）。
 
 ## 图画生成
 
