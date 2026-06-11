@@ -3,8 +3,8 @@ package scene
 import (
 	"image"
 	_ "image/png"
+	"io/fs"
 	"math"
-	"os"
 
 	"ebiten-agent-example/internal/component"
 	"ebiten-agent-example/internal/config"
@@ -26,8 +26,8 @@ type BattleScene struct {
 }
 
 // NewBattleScene creates a new battle scene with the given floor tile image.
-func NewBattleScene(floorImagePath string) (*BattleScene, error) {
-	f, err := os.Open(floorImagePath)
+func NewBattleScene(fsys fs.FS, floorImagePath string) (*BattleScene, error) {
+	f, err := fsys.Open(floorImagePath)
 	if err != nil {
 		return nil, err
 	}

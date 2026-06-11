@@ -5,6 +5,6 @@ import (
 )
 
 type Entity interface {
-	Update() error
+	Update(deltaTime float64)
 	Draw(screen *ebiten.Image)
 }

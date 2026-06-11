@@ -8,7 +8,6 @@
 | `config` | 屏幕尺寸等全局常量 |
 | `entity` | 游戏对象，组合component |
 | `scene` | 场景生命周期、entity管理 |
-| `render` | 精灵、动画等渲染结构 |
 | `game` | ebiten.Game实现、场景切换 |
 
 ## 设计原则
@@ -50,6 +49,13 @@ player.Update(dt)
 | 0.5 | 慢动作 |
 | 1.0 | 正常 |
 | 2.0 | 快进 |
+
+**暂停与恢复**：`Pause()`保存当前scale，`Resume()`恢复之前的scale。
+```go
+clock.SetScale(0.5)  // 慢动作
+clock.Pause()        // 暂停，保存scale=0.5
+clock.Resume()       // 恢复scale=0.5（而非默认1.0）
+```
 
 **嵌套时钟**用于独立控制不同系统的时间：
 ```go

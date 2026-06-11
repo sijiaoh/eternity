@@ -97,6 +97,21 @@ func TestClock_PauseResume(t *testing.T) {
 	}
 }
 
+func TestClock_PauseResumePreservesScale(t *testing.T) {
+	c := NewClock()
+	c.SetScale(0.5) // slow motion
+
+	c.Pause()
+	if !c.IsPaused() {
+		t.Error("IsPaused() = false after Pause()")
+	}
+
+	c.Resume()
+	if c.Scale() != 0.5 {
+		t.Errorf("Scale() = %v after Resume(), want 0.5 (original scale)", c.Scale())
+	}
+}
+
 func TestNewChildClock(t *testing.T) {
 	parent := NewClock()
 	child := NewChildClock(parent)

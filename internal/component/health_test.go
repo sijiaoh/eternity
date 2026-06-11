@@ -4,9 +4,9 @@ import "testing"
 
 func TestHealth_IsDead(t *testing.T) {
 	tests := []struct {
-		name    string
-		health  Health
-		want    bool
+		name   string
+		health Health
+		want   bool
 	}{
 		{"zero health", Health{Current: 0, Max: 100}, true},
 		{"negative health", Health{Current: -10, Max: 100}, true},

@@ -1,6 +1,7 @@
 package game
 
 import (
+	"ebiten-agent-example/assets"
 	"ebiten-agent-example/internal/config"
 	"ebiten-agent-example/internal/scene"
 
@@ -12,7 +13,7 @@ type Game struct {
 }
 
 func New() (*Game, error) {
-	battleScene, err := scene.NewBattleScene("assets/images/battle/floor/stone.png")
+	battleScene, err := scene.NewBattleScene(assets.Images, "images/battle/floor/stone.png")
 	if err != nil {
 		return nil, err
 	}

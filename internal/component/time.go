@@ -6,10 +6,11 @@ package component
 // Root clocks track raw delta time directly. Child clocks derive their
 // delta time from their parent, applying their own scale factor.
 type Clock struct {
-	scale     float64
-	rawDelta  float64
-	totalTime float64
-	parent    *Clock
+	scale       float64
+	pausedScale float64 // scale before Pause(), restored on Resume()
+	rawDelta    float64
+	totalTime   float64
+	parent      *Clock
 }
 
 // NewClock creates a root clock with scale 1.0.
@@ -66,10 +67,19 @@ func (c *Clock) IsPaused() bool {
 	return c.scale == 0
 }
 
+// Pause stops time by setting scale to 0, preserving the current scale for Resume.
 func (c *Clock) Pause() {
+	if c.scale != 0 {
+		c.pausedScale = c.scale
+	}
 	c.scale = 0
 }
 
+// Resume restores the scale that was active before Pause.
 func (c *Clock) Resume() {
-	c.scale = 1.0
+	if c.pausedScale != 0 {
+		c.scale = c.pausedScale
+	} else {
+		c.scale = 1.0
+	}
 }

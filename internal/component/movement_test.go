@@ -56,10 +56,10 @@ func TestMovement_DistanceProportionalToTime(t *testing.T) {
 		dt       float64
 		wantDist float64
 	}{
-		{1.0 / 60.0, 1.0},  // 60fps: 1 pixel per frame
-		{1.0 / 30.0, 2.0},  // 30fps: 2 pixels per frame
-		{1.0, 60.0},        // 1 second: 60 pixels
-		{0.5, 30.0},        // 0.5 seconds: 30 pixels
+		{1.0 / 60.0, 1.0}, // 60fps: 1 pixel per frame
+		{1.0 / 30.0, 2.0}, // 30fps: 2 pixels per frame
+		{1.0, 60.0},       // 1 second: 60 pixels
+		{0.5, 30.0},       // 0.5 seconds: 30 pixels
 	}
 
 	for _, tt := range tests {
