@@ -8,8 +8,14 @@ type Movement struct {
 	Speed float64 // pixels per second
 }
 
-func NewMovement(speed float64) Movement {
-	return Movement{Speed: speed}
+func NewMovement(speed float64) *Movement {
+	return &Movement{Speed: speed}
+}
+
+// Update applies direction input to the position.
+func (m *Movement) Update(pos *Position, dir MoveDirection, deltaTime float64) {
+	dx, dy := m.CalcDelta(dir, deltaTime)
+	pos.Move(dx, dy)
 }
 
 // CalcDelta returns movement delta for this frame.

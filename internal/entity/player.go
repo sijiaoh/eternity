@@ -4,7 +4,6 @@ import (
 	"image/color"
 
 	"ebiten-agent-example/internal/component"
-	"ebiten-agent-example/internal/input"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -16,27 +15,25 @@ const (
 )
 
 type Player struct {
-	Position component.Position
-	Movement component.Movement
+	Position *component.Position
+	Movement *component.Movement
 }
 
 func NewPlayer(x, y float64) *Player {
 	return &Player{
-		Position: component.Position{X: x, Y: y},
+		Position: component.NewPosition(x, y),
 		Movement: component.NewMovement(playerSpeed),
 	}
 }
 
 func (p *Player) Update(deltaTime float64) {
-	dir := input.GetDirection()
-	moveDir := component.MoveDirection{
-		Up:    dir.Up,
-		Down:  dir.Down,
-		Left:  dir.Left,
-		Right: dir.Right,
+	dir := component.MoveDirection{
+		Up:    ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
+		Down:  ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown),
+		Left:  ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft),
+		Right: ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight),
 	}
-	dx, dy := p.Movement.CalcDelta(moveDir, deltaTime)
-	p.Position.Move(dx, dy)
+	p.Movement.Update(p.Position, dir, deltaTime)
 }
 
 func (p *Player) Draw(screen *ebiten.Image) {

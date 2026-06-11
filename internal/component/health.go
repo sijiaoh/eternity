@@ -5,6 +5,10 @@ type Health struct {
 	Max     int
 }
 
+func NewHealth(max int) *Health {
+	return &Health{Current: max, Max: max}
+}
+
 func (h *Health) IsDead() bool {
 	return h.Current <= 0
 }
