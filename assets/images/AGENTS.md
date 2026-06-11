@@ -60,7 +60,7 @@
 
 ## 整理
 
-素材应该合理的放置，按照domain整理文件夹。
+素材应该合理的放置，按照领域模型整理文件夹。
 素材的同阶层必须有同名的`.source.md`或者`.prompt.md`。
 
 - 单个图片：`image.png` → `image.source.md`
