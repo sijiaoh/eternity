@@ -1,5 +1,6 @@
 # Go binaries
 /image-generator
+*.test
 
 # Environment files
 .env
