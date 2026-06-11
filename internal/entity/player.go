@@ -12,7 +12,7 @@ import (
 
 const (
 	playerRadius = 20
-	playerSpeed  = 4.0
+	playerSpeed  = 240.0 // pixels per second (≈4 pixels at 60fps)
 )
 
 type Player struct {
@@ -27,7 +27,7 @@ func NewPlayer(x, y float64) *Player {
 	}
 }
 
-func (p *Player) Update() error {
+func (p *Player) Update(deltaTime float64) {
 	dir := input.GetDirection()
 	moveDir := component.MoveDirection{
 		Up:    dir.Up,
@@ -35,9 +35,8 @@ func (p *Player) Update() error {
 		Left:  dir.Left,
 		Right: dir.Right,
 	}
-	dx, dy := p.Movement.CalcDelta(moveDir)
+	dx, dy := p.Movement.CalcDelta(moveDir, deltaTime)
 	p.Position.Move(dx, dy)
-	return nil
 }
 
 func (p *Player) Draw(screen *ebiten.Image) {

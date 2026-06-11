@@ -5,26 +5,27 @@ type MoveDirection struct {
 }
 
 type Movement struct {
-	Speed float64
+	Speed float64 // pixels per second
 }
 
 func NewMovement(speed float64) Movement {
 	return Movement{Speed: speed}
 }
 
-// CalcDelta normalizes diagonal movement to prevent faster diagonal speed.
-func (m *Movement) CalcDelta(dir MoveDirection) (dx, dy float64) {
+// CalcDelta returns movement delta for this frame.
+// Diagonal movement is normalized to prevent faster diagonal speed.
+func (m *Movement) CalcDelta(dir MoveDirection, deltaTime float64) (dx, dy float64) {
 	if dir.Up {
-		dy -= m.Speed
+		dy -= 1
 	}
 	if dir.Down {
-		dy += m.Speed
+		dy += 1
 	}
 	if dir.Left {
-		dx -= m.Speed
+		dx -= 1
 	}
 	if dir.Right {
-		dx += m.Speed
+		dx += 1
 	}
 
 	if dx != 0 && dy != 0 {
@@ -32,6 +33,9 @@ func (m *Movement) CalcDelta(dir MoveDirection) (dx, dy float64) {
 		dx *= diagonalFactor
 		dy *= diagonalFactor
 	}
+
+	dx *= m.Speed * deltaTime
+	dy *= m.Speed * deltaTime
 
 	return dx, dy
 }

@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 
+	"ebiten-agent-example/internal/component"
 	"ebiten-agent-example/internal/config"
 	"ebiten-agent-example/internal/entity"
 
@@ -14,6 +15,7 @@ import (
 
 // BattleScene implements a battle scene with infinite scrolling floor.
 type BattleScene struct {
+	clock     *component.Clock
 	floorTile *ebiten.Image
 	tileSize  int
 	offsetX   float64
@@ -40,6 +42,7 @@ func NewBattleScene(floorImagePath string) (*BattleScene, error) {
 	bounds := img.Bounds()
 
 	return &BattleScene{
+		clock:     component.NewClock(),
 		floorTile: tile,
 		tileSize:  bounds.Dx(),
 		scrollX:   50, // pixels per second
@@ -49,12 +52,30 @@ func NewBattleScene(floorImagePath string) (*BattleScene, error) {
 }
 
 func (s *BattleScene) Update() error {
-	tps := float64(ebiten.TPS())
-	s.offsetX += s.scrollX / tps
-	s.offsetY += s.scrollY / tps
+	s.clock.Update(1.0 / float64(ebiten.TPS()))
+	dt := s.clock.DeltaTime()
+	s.offsetX += s.scrollX * dt
+	s.offsetY += s.scrollY * dt
 	s.offsetX = math.Mod(s.offsetX, float64(s.tileSize))
 	s.offsetY = math.Mod(s.offsetY, float64(s.tileSize))
-	return s.player.Update()
+	s.player.Update(dt)
+	return nil
+}
+
+func (s *BattleScene) SetTimeScale(scale float64) {
+	s.clock.SetScale(scale)
+}
+
+func (s *BattleScene) Pause() {
+	s.clock.Pause()
+}
+
+func (s *BattleScene) Resume() {
+	s.clock.Resume()
+}
+
+func (s *BattleScene) IsPaused() bool {
+	return s.clock.IsPaused()
 }
 
 func (s *BattleScene) Draw(screen *ebiten.Image) {
