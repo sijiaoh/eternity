@@ -230,7 +230,7 @@ func TestAnimation_NegativeDeltaTime(t *testing.T) {
 		{Name: "walk", StartFrame: 0, FrameCount: 6, FPS: 10, Loop: true},
 	})
 
-	a.Update(0.1) // advance to frame 1
+	a.Update(0.1)  // advance to frame 1
 	a.Update(-0.5) // negative time should be ignored
 
 	if a.Frame() != 1 {
