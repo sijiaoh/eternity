@@ -35,7 +35,9 @@ func (s *Storage[T]) Set(e Entity, c T) {
 			s.dense[idx] = c
 			return
 		}
-		// e.Generation > stored.Generation: replace old data
+		// e.Generation > stored.Generation: ID was recycled.
+		// Old entity was deleted (without Remove from this storage), new entity reuses the ID.
+		// Replace the orphaned slot with new entity's data.
 		s.dense[idx] = c
 		s.entities[idx] = e
 		return

@@ -6,6 +6,7 @@ type World struct {
 	free       []Entity // recycled entity slots
 	generation []uint32 // current generation for each ID
 	alive      []bool   // true if entity at index is alive
+	count      int      // number of alive entities
 }
 
 // NewWorld creates an empty world with pre-allocated capacity.
@@ -20,6 +21,8 @@ func NewWorld(capacity int) *World {
 
 // Spawn creates a new entity.
 func (w *World) Spawn() Entity {
+	w.count++
+
 	// Reuse recycled slot if available
 	if len(w.free) > 0 {
 		e := w.free[len(w.free)-1]
@@ -44,6 +47,7 @@ func (w *World) Despawn(e Entity) {
 		return
 	}
 
+	w.count--
 	w.alive[e.ID] = false
 	w.generation[e.ID]++
 
@@ -63,11 +67,5 @@ func (w *World) Alive(e Entity) bool {
 
 // Count returns the number of alive entities.
 func (w *World) Count() int {
-	count := 0
-	for _, a := range w.alive {
-		if a {
-			count++
-		}
-	}
-	return count
+	return w.count
 }

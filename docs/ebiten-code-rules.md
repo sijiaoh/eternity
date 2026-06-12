@@ -84,6 +84,38 @@ x := config.UnitsToPixels(pos.X) // 用于 DrawImage
 
 **禁止依赖固定帧率**。所有游戏逻辑必须基于时间（秒），而非帧数。
 
+### Clock API
+
+| 方法 | 用途 |
+|------|------|
+| `NewClock()` | 创建根时钟 |
+| `NewChildClock(parent)` | 创建子时钟，继承父时钟的deltaTime |
+| `Update(rawDelta)` | **仅根时钟**：设置原始帧时间并推进TotalTime |
+| `Tick()` | **仅子时钟**：推进TotalTime |
+| `DeltaTime()` | 获取缩放后的帧时间 |
+| `TotalTime()` | 获取累计游戏时间 |
+| `SetScale(s)` | 设置时间缩放（负值钳位为0） |
+| `Pause()` / `Resume()` | 暂停/恢复（保留暂停前的scale） |
+
+### 根时钟 vs 子时钟
+
+- **根时钟**：时间源头，用`Update(rawDelta)`接收帧时间
+- **子时钟**：从父时钟继承deltaTime，用`Tick()`推进时间，scale与父时钟叠加
+
+```go
+root := component.NewClock()
+game := component.NewChildClock(root)
+ui := component.NewChildClock(root)
+
+// 每帧更新
+root.Update(1.0 / float64(ebiten.TPS()))  // 根时钟：传入帧时间
+game.Tick()                                // 子时钟：用Tick()
+ui.Tick()
+
+// Scale叠加：game.DeltaTime() = root.DeltaTime() * 0.5
+game.SetScale(0.5)  // 游戏慢动作，UI正常
+```
+
 ### deltaTime规范
 
 ```go
@@ -100,16 +132,7 @@ frameCount++; if frameCount >= 60 { ... }  // 帧计数器
 cooldown := 120  // 用帧数表示2秒
 ```
 
-**scene层获取deltaTime**：
-```go
-s.clock.Update(1.0 / float64(ebiten.TPS()))
-dt := s.clock.DeltaTime()
-s.movementSystem.Update(s.world, dt)
-```
-
 ### 时间缩放
-
-使用`Clock`实现暂停、慢动作等效果。
 
 | Scale值 | 效果 |
 |---------|------|
@@ -118,18 +141,10 @@ s.movementSystem.Update(s.world, dt)
 | 1.0 | 正常 |
 | 2.0 | 快进 |
 
-**暂停与恢复**：`Pause()`保存当前scale，`Resume()`恢复之前的scale。
+`Pause()`保存当前scale，`Resume()`恢复之前的scale：
 ```go
 clock.SetScale(0.5)  // 慢动作
 clock.Pause()        // 暂停，保存scale=0.5
 clock.Resume()       // 恢复scale=0.5（而非默认1.0）
-```
-
-**嵌套时钟**用于独立控制不同系统的时间：
-```go
-gameClock := component.NewChildClock(root)  // 游戏逻辑
-uiClock := component.NewChildClock(root)    // UI动画
-
-gameClock.SetScale(0.5) // 游戏慢动作，UI正常
 ```
 
