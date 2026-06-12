@@ -18,7 +18,7 @@ func main() {
 	}
 
 	ebiten.SetWindowSize(config.ScreenWidth, config.ScreenHeight)
-	ebiten.SetWindowTitle("Vampire Survivors Clone")
+	ebiten.SetWindowTitle("Eternity")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 
 	if err := ebiten.RunGame(g); err != nil {
