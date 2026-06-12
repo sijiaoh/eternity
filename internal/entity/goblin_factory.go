@@ -29,6 +29,7 @@ type GoblinFactoryConfig struct {
 	FrameHeight int
 	Columns     int
 	AnimFPS     float64
+	SizeInUnits float64 // Target width in world units; 0 = native size
 }
 
 // CreateGoblin spawns a goblin entity with follow AI.
@@ -71,6 +72,7 @@ func CreateGoblin(w *ecs.World, c *GoblinComponents, cfg GoblinFactoryConfig) ec
 		Columns:     cfg.Columns,
 		Anchor:      component.AnchorCenter(),
 		FlipOnRight: true,
+		SizeInUnits: cfg.SizeInUnits,
 	})
 
 	return e

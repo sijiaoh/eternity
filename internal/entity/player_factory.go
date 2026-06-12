@@ -29,6 +29,7 @@ type PlayerFactoryConfig struct {
 	FrameHeight int
 	Columns     int
 	AnimFPS     float64
+	SizeInUnits float64 // Target width in world units; 0 = native size
 }
 
 // CreatePlayer spawns a player entity with all required components.
@@ -58,6 +59,7 @@ func CreatePlayer(w *ecs.World, c *PlayerComponents, cfg PlayerFactoryConfig) ec
 		FrameHeight: cfg.FrameHeight,
 		Columns:     cfg.Columns,
 		Anchor:      component.AnchorCenter(),
+		SizeInUnits: cfg.SizeInUnits,
 	})
 
 	c.CameraTargets.Set(e, component.CameraTarget{})

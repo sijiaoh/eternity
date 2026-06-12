@@ -94,6 +94,25 @@ speed := 5.0                            // 5 units/s
 x := config.UnitsToPixels(pos.X) // 用于 DrawImage
 ```
 
+### Sprite缩放
+
+`SpriteSheet.SizeInUnits`指定sprite的目标宽度（世界单位），渲染时自动计算缩放比例。
+
+| SizeInUnits | 效果 |
+|-------------|------|
+| 0（默认） | 原尺寸（scale=1.0） |
+| 1.0 | 宽度为1单位（48像素） |
+| 2.0 | 宽度为2单位（96像素） |
+
+```go
+// 创建实体时指定目标尺寸
+entity.CreatePlayer(world, components, entity.PlayerFactoryConfig{
+    SizeInUnits: 1.5, // 显示为1.5个世界单位宽
+})
+```
+
+缩放比例计算：`scale = UnitsToPixels(SizeInUnits) / FrameWidth`
+
 ## 时间系统
 
 **禁止依赖固定帧率**。所有游戏逻辑必须基于时间（秒），而非帧数。

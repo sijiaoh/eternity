@@ -53,13 +53,23 @@ func (s *SpriteSheetRenderSystem) Draw(w *ecs.World, screen *ebiten.Image) {
 			return
 		}
 
-		drawX, drawY := SpriteSheetCalcDrawPosition(sheet, screenX, screenY)
+		scale := SpriteSheetCalcScale(sheet.FrameWidth, sheet.SizeInUnits)
+		drawX, drawY := SpriteSheetCalcDrawPosition(
+			sheet.FrameWidth, sheet.FrameHeight,
+			sheet.Anchor.X, sheet.Anchor.Y,
+			screenX, screenY, scale,
+		)
+
 		opts := &ebiten.DrawImageOptions{}
-		if sheet.FlipH {
-			opts.GeoM.Scale(-1, 1)
-			opts.GeoM.Translate(float64(sheet.FrameWidth), 0)
-		}
+		// GeoM operations are applied in reverse order (right-to-left multiplication)
+		// Desired execution order: flip → flip_offset → scale → position
+		// Write order (reverse): position → scale → flip_offset → flip
 		opts.GeoM.Translate(drawX, drawY)
+		opts.GeoM.Scale(scale, scale)
+		if sheet.FlipH {
+			opts.GeoM.Translate(float64(sheet.FrameWidth), 0)
+			opts.GeoM.Scale(-1, 1)
+		}
 		screen.DrawImage(frame, opts)
 	})
 }
@@ -80,9 +90,3 @@ func SpriteSheetFrame(sheet *component.SpriteSheet, index int) *ebiten.Image {
 	return sheet.Image.SubImage(rect).(*ebiten.Image)
 }
 
-// SpriteSheetCalcDrawPosition returns draw position adjusted for anchor.
-func SpriteSheetCalcDrawPosition(sheet *component.SpriteSheet, x, y float64) (drawX, drawY float64) {
-	offsetX := float64(sheet.FrameWidth) * sheet.Anchor.X
-	offsetY := float64(sheet.FrameHeight) * sheet.Anchor.Y
-	return x - offsetX, y - offsetY
-}
