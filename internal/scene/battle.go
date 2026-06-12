@@ -118,6 +118,7 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		X:           playerX,
 		Y:           playerY,
 		Speed:       5.0, // units per second
+		SizeInUnits: 1.0,
 		SpriteSheet: cfg.PlayerSpriteSheet,
 		FrameWidth:  cfg.PlayerFrameWidth,
 		FrameHeight: cfg.PlayerFrameHeight,
@@ -131,6 +132,7 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 			X:           playerX + 3.0,
 			Y:           playerY + 3.0,
 			Speed:       3.0, // slower than player
+			SizeInUnits: 1.0,
 			Target:      player,
 			SpriteSheet: cfg.GoblinSpriteSheet,
 			FrameWidth:  cfg.GoblinFrameWidth,
