@@ -1,3 +1,5 @@
+//go:build !test
+
 package scene
 
 import (
@@ -8,6 +10,8 @@ import (
 
 	"eternity/internal/component"
 	"eternity/internal/config"
+	"eternity/internal/ecs"
+	"eternity/internal/ecs/system"
 	"eternity/internal/entity"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -18,7 +22,21 @@ type BattleScene struct {
 	camera    *component.Camera
 	floorTile *ebiten.Image
 	tileSize  int
-	player    *entity.Player
+
+	// ECS
+	world      *ecs.World
+	components *entity.PlayerComponents
+
+	// Systems (update order matters)
+	inputSystem          *system.InputSystem
+	movementSystem       *system.MovementSystem
+	facingSystem         *system.FacingSystem
+	animationStateSystem *system.AnimationStateSystem
+	animationSystem      *system.AnimationSystem
+	cameraSystem         *system.CameraSystem
+
+	// Draw systems
+	renderSystem *system.SpriteSheetRenderSystem
 }
 
 type BattleSceneConfig struct {
@@ -50,31 +68,73 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		return nil, err
 	}
 
-	playerCfg := entity.PlayerConfig{
+	playerX := config.PixelsToUnits(config.ScreenWidth / 2)
+	playerY := config.PixelsToUnits(config.ScreenHeight / 2)
+
+	camera := component.NewCamera(playerX, playerY, 0.1)
+
+	// Create ECS world and storages
+	world := ecs.NewWorld(64)
+	components := &entity.PlayerComponents{
+		Positions:     ecs.NewStorage[component.Position](64),
+		Velocities:    ecs.NewStorage[component.Velocity](64),
+		Inputs:        ecs.NewStorage[component.InputControlled](8),
+		Facings:       ecs.NewStorage[component.Facing](64),
+		Animations:    ecs.NewStorage[component.Animation](64),
+		SpriteSheets:  ecs.NewStorage[component.SpriteSheet](64),
+		CameraTargets: ecs.NewStorage[component.CameraTarget](4),
+	}
+
+	// Create player entity
+	entity.CreatePlayer(world, components, entity.PlayerFactoryConfig{
+		X:           playerX,
+		Y:           playerY,
+		Speed:       5.0, // units per second
 		SpriteSheet: cfg.PlayerSpriteSheet,
 		FrameWidth:  cfg.PlayerFrameWidth,
 		FrameHeight: cfg.PlayerFrameHeight,
 		Columns:     cfg.PlayerSpriteColumns,
 		AnimFPS:     cfg.PlayerAnimFPS,
-	}
+	})
 
-	playerX := config.PixelsToUnits(config.ScreenWidth / 2)
-	playerY := config.PixelsToUnits(config.ScreenHeight / 2)
+	// Create systems
+	inputSystem := system.NewInputSystem(components.Inputs, components.Velocities)
+	movementSystem := system.NewMovementSystem(components.Positions, components.Velocities)
+	facingSystem := system.NewFacingSystem(components.Facings, components.Velocities)
+	animationStateSystem := system.NewAnimationStateSystem(components.Animations, components.Facings)
+	animationSystem := system.NewAnimationSystem(components.Animations)
+	cameraSystem := system.NewCameraSystem(components.CameraTargets, components.Positions, camera)
+	renderSystem := system.NewSpriteSheetRenderSystem(components.Positions, components.Animations, components.SpriteSheets, camera)
 
 	return &BattleScene{
-		clock:     component.NewClock(),
-		camera:    component.NewCamera(playerX, playerY, 0.1),
-		floorTile: tile,
-		tileSize:  tile.Bounds().Dx(),
-		player:    entity.NewPlayer(playerX, playerY, playerCfg),
+		clock:                component.NewClock(),
+		camera:               camera,
+		floorTile:            tile,
+		tileSize:             tile.Bounds().Dx(),
+		world:                world,
+		components:           components,
+		inputSystem:          inputSystem,
+		movementSystem:       movementSystem,
+		facingSystem:         facingSystem,
+		animationStateSystem: animationStateSystem,
+		animationSystem:      animationSystem,
+		cameraSystem:         cameraSystem,
+		renderSystem:         renderSystem,
 	}, nil
 }
 
 func (s *BattleScene) Update() error {
 	s.clock.Update(1.0 / float64(ebiten.TPS()))
 	dt := s.clock.DeltaTime()
-	s.player.Update(dt)
-	s.camera.Update(s.player.Position.X, s.player.Position.Y, dt)
+
+	// Update systems in order
+	s.inputSystem.Update(s.world, dt)
+	s.movementSystem.Update(s.world, dt)
+	s.facingSystem.Update(s.world, dt)
+	s.animationStateSystem.Update(s.world, dt)
+	s.animationSystem.Update(s.world, dt)
+	s.cameraSystem.Update(s.world, dt)
+
 	return nil
 }
 
@@ -115,7 +175,6 @@ func (s *BattleScene) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	// Draw player relative to camera
-	screenX, screenY := s.camera.WorldToScreen(s.player.Position.X, s.player.Position.Y)
-	s.player.DrawAt(screen, screenX, screenY)
+	// Draw entities via ECS render system
+	s.renderSystem.Draw(s.world, screen)
 }

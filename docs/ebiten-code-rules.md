@@ -4,16 +4,54 @@
 
 | 包 | 职责 |
 |---|---|
-| `component` | 游戏对象组件（位置、移动、生命等） |
+| `component` | 纯数据组件（Position、Velocity、Animation等） |
 | `config` | 屏幕尺寸等全局常量 |
-| `entity` | 游戏对象，组合component |
-| `scene` | 场景生命周期、entity管理 |
+| `ecs` | ECS核心：World、Storage、System接口 |
+| `ecs/system` | 具体System实现（Input、Movement、Render等） |
+| `entity` | 实体工厂函数（组合组件创建实体） |
+| `scene` | 场景生命周期、System调度 |
 | `game` | ebiten.Game实现、场景切换 |
 
-## 设计原则
+## ECS架构
 
-1. **组合优于继承**：entity通过嵌入component组合功能
-2. **单向依赖**：高层依赖低层（scene→entity→component），禁止反向
+采用Entity-Component-System模式：
+- **Entity**：仅为ID（uint32 + Generation），无逻辑
+- **Component**：纯数据，存储于`Storage[T]`
+- **System**：纯逻辑，遍历组件执行行为
+
+### 依赖关系
+
+```
+scene → ecs/system → ecs → component
+  ↓                   ↑
+entity ───────────────┘
+```
+
+### System执行顺序
+
+Scene负责按顺序调用System：
+
+```go
+// Update顺序决定逻辑正确性
+inputSystem.Update(world, dt)          // 1. 读取输入
+movementSystem.Update(world, dt)       // 2. 应用移动
+facingSystem.Update(world, dt)         // 3. 更新朝向
+animationStateSystem.Update(world, dt) // 4. 设置动画状态
+animationSystem.Update(world, dt)      // 5. 更新动画帧
+cameraSystem.Update(world, dt)         // 6. 跟随摄像机
+```
+
+### 创建实体
+
+使用工厂函数组合组件：
+
+```go
+entity.CreatePlayer(world, components, entity.PlayerFactoryConfig{
+    X: 2.0, Y: 3.0,
+    Speed: 5.0,
+    // ...
+})
+```
 
 ## 单位系统
 
@@ -49,14 +87,14 @@ x := config.UnitsToPixels(pos.X) // 用于 DrawImage
 ### deltaTime规范
 
 ```go
-// ✅ 正确
-func (p *Player) Update(dt float64) {
-    p.Position.X += p.velocity * dt  // velocity: units/s
+// ✅ 正确：System通过参数接收dt
+func (s *MovementSystem) Update(w *ecs.World, dt float64) {
+    pos.X += vel.X * dt  // velocity: units/s
 }
 
 // ❌ 错误
-func (p *Player) Update() {
-    p.Position.X += p.velocity / 60.0  // 硬编码帧率
+func (s *MovementSystem) Update(w *ecs.World) {
+    pos.X += vel.X / 60.0  // 硬编码帧率
 }
 frameCount++; if frameCount >= 60 { ... }  // 帧计数器
 cooldown := 120  // 用帧数表示2秒
@@ -66,7 +104,7 @@ cooldown := 120  // 用帧数表示2秒
 ```go
 s.clock.Update(1.0 / float64(ebiten.TPS()))
 dt := s.clock.DeltaTime()
-player.Update(dt)
+s.movementSystem.Update(s.world, dt)
 ```
 
 ### 时间缩放
