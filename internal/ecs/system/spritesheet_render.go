@@ -55,6 +55,10 @@ func (s *SpriteSheetRenderSystem) Draw(w *ecs.World, screen *ebiten.Image) {
 
 		drawX, drawY := SpriteSheetCalcDrawPosition(sheet, screenX, screenY)
 		opts := &ebiten.DrawImageOptions{}
+		if sheet.FlipH {
+			opts.GeoM.Scale(-1, 1)
+			opts.GeoM.Translate(float64(sheet.FrameWidth), 0)
+		}
 		opts.GeoM.Translate(drawX, drawY)
 		screen.DrawImage(frame, opts)
 	})

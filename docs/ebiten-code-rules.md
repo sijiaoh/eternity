@@ -46,11 +46,13 @@ Scene负责按顺序调用System：
 ```go
 // Update顺序决定逻辑正确性
 inputSystem.Update(world, dt)          // 1. 读取输入
-movementSystem.Update(world, dt)       // 2. 应用移动
-facingSystem.Update(world, dt)         // 3. 更新朝向
-animationStateSystem.Update(world, dt) // 4. 设置动画状态
-animationSystem.Update(world, dt)      // 5. 更新动画帧
-cameraSystem.Update(world, dt)         // 6. 跟随摄像机
+aiFollowSystem.Update(world, dt)       // 2. AI跟随（更新敌人速度）
+movementSystem.Update(world, dt)       // 3. 应用移动
+facingSystem.Update(world, dt)         // 4. 更新朝向
+spriteFlipSystem.Update(world, dt)     // 5. 精灵翻转（单方向素材）
+animationStateSystem.Update(world, dt) // 6. 设置动画状态
+animationSystem.Update(world, dt)      // 7. 更新动画帧
+cameraSystem.Update(world, dt)         // 8. 跟随摄像机
 ```
 
 ### 创建实体

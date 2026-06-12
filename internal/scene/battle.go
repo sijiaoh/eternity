@@ -24,13 +24,14 @@ type BattleScene struct {
 	tileSize  int
 
 	// ECS
-	world      *ecs.World
-	components *entity.PlayerComponents
+	world *ecs.World
 
 	// Systems (update order matters)
 	inputSystem          *system.InputSystem
+	aiFollowSystem       *system.AIFollowSystem
 	movementSystem       *system.MovementSystem
 	facingSystem         *system.FacingSystem
+	spriteFlipSystem     *system.SpriteFlipSystem
 	animationStateSystem *system.AnimationStateSystem
 	animationSystem      *system.AnimationSystem
 	cameraSystem         *system.CameraSystem
@@ -46,6 +47,11 @@ type BattleSceneConfig struct {
 	PlayerFrameWidth    int
 	PlayerFrameHeight   int
 	PlayerAnimFPS       float64
+	GoblinSpriteSheet   *ebiten.Image
+	GoblinSpriteColumns int
+	GoblinFrameWidth    int
+	GoblinFrameHeight   int
+	GoblinAnimFPS       float64
 }
 
 func loadImage(fsys fs.FS, path string) (*ebiten.Image, error) {
@@ -74,17 +80,41 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	camera := component.NewCamera(playerX, playerY, 0.1)
 
 	world := ecs.NewWorld(64)
-	components := &entity.PlayerComponents{
-		Positions:     ecs.NewStorage[component.Position](64),
-		Velocities:    ecs.NewStorage[component.Velocity](64),
-		Inputs:        ecs.NewStorage[component.InputControlled](8),
-		Facings:       ecs.NewStorage[component.Facing](64),
-		Animations:    ecs.NewStorage[component.Animation](64),
-		SpriteSheets:  ecs.NewStorage[component.SpriteSheet](64),
-		CameraTargets: ecs.NewStorage[component.CameraTarget](4),
+
+	// Shared storages
+	positions := ecs.NewStorage[component.Position](64)
+	velocities := ecs.NewStorage[component.Velocity](64)
+	facings := ecs.NewStorage[component.Facing](64)
+	animations := ecs.NewStorage[component.Animation](64)
+	spriteSheets := ecs.NewStorage[component.SpriteSheet](64)
+
+	// Player-specific storages
+	inputs := ecs.NewStorage[component.InputControlled](8)
+	cameraTargets := ecs.NewStorage[component.CameraTarget](4)
+
+	// Goblin-specific storages
+	aiFollows := ecs.NewStorage[component.AIFollow](32)
+
+	playerComponents := &entity.PlayerComponents{
+		Positions:     positions,
+		Velocities:    velocities,
+		Inputs:        inputs,
+		Facings:       facings,
+		Animations:    animations,
+		SpriteSheets:  spriteSheets,
+		CameraTargets: cameraTargets,
 	}
 
-	entity.CreatePlayer(world, components, entity.PlayerFactoryConfig{
+	goblinComponents := &entity.GoblinComponents{
+		Positions:    positions,
+		Velocities:   velocities,
+		AIFollows:    aiFollows,
+		Facings:      facings,
+		Animations:   animations,
+		SpriteSheets: spriteSheets,
+	}
+
+	player := entity.CreatePlayer(world, playerComponents, entity.PlayerFactoryConfig{
 		X:           playerX,
 		Y:           playerY,
 		Speed:       5.0, // units per second
@@ -95,13 +125,30 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		AnimFPS:     cfg.PlayerAnimFPS,
 	})
 
-	inputSystem := system.NewInputSystem(components.Inputs, components.Velocities)
-	movementSystem := system.NewMovementSystem(components.Positions, components.Velocities)
-	facingSystem := system.NewFacingSystem(components.Facings, components.Velocities)
-	animationStateSystem := system.NewAnimationStateSystem(components.Animations, components.Facings)
-	animationSystem := system.NewAnimationSystem(components.Animations)
-	cameraSystem := system.NewCameraSystem(components.CameraTargets, components.Positions, camera)
-	renderSystem := system.NewSpriteSheetRenderSystem(components.Positions, components.Animations, components.SpriteSheets, camera)
+	// Create goblin if sprite is provided
+	if cfg.GoblinSpriteSheet != nil {
+		entity.CreateGoblin(world, goblinComponents, entity.GoblinFactoryConfig{
+			X:           playerX + 3.0,
+			Y:           playerY + 3.0,
+			Speed:       3.0, // slower than player
+			Target:      player,
+			SpriteSheet: cfg.GoblinSpriteSheet,
+			FrameWidth:  cfg.GoblinFrameWidth,
+			FrameHeight: cfg.GoblinFrameHeight,
+			Columns:     cfg.GoblinSpriteColumns,
+			AnimFPS:     cfg.GoblinAnimFPS,
+		})
+	}
+
+	inputSystem := system.NewInputSystem(inputs, velocities)
+	aiFollowSystem := system.NewAIFollowSystem(aiFollows, positions, velocities)
+	movementSystem := system.NewMovementSystem(positions, velocities)
+	facingSystem := system.NewFacingSystem(facings, velocities)
+	spriteFlipSystem := system.NewSpriteFlipSystem(facings, spriteSheets)
+	animationStateSystem := system.NewAnimationStateSystem(animations, facings)
+	animationSystem := system.NewAnimationSystem(animations)
+	cameraSystem := system.NewCameraSystem(cameraTargets, positions, camera)
+	renderSystem := system.NewSpriteSheetRenderSystem(positions, animations, spriteSheets, camera)
 
 	return &BattleScene{
 		clock:                component.NewClock(),
@@ -109,10 +156,11 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		floorTile:            tile,
 		tileSize:             tile.Bounds().Dx(),
 		world:                world,
-		components:           components,
 		inputSystem:          inputSystem,
+		aiFollowSystem:       aiFollowSystem,
 		movementSystem:       movementSystem,
 		facingSystem:         facingSystem,
+		spriteFlipSystem:     spriteFlipSystem,
 		animationStateSystem: animationStateSystem,
 		animationSystem:      animationSystem,
 		cameraSystem:         cameraSystem,
@@ -126,8 +174,10 @@ func (s *BattleScene) Update() error {
 
 	// Update systems in order
 	s.inputSystem.Update(s.world, dt)
+	s.aiFollowSystem.Update(s.world, dt)
 	s.movementSystem.Update(s.world, dt)
 	s.facingSystem.Update(s.world, dt)
+	s.spriteFlipSystem.Update(s.world, dt)
 	s.animationStateSystem.Update(s.world, dt)
 	s.animationSystem.Update(s.world, dt)
 	s.cameraSystem.Update(s.world, dt)

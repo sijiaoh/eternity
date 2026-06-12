@@ -13,14 +13,19 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-// Mage sprite sheet layout: 6 columns x 5 rows
-// Row order: down, left, up, right (+ extra row)
+// Sprite sheet layout: 6 columns x 4+ rows
+// Row order: down, left, up, right
 // Per row: 6 walk frames (frame 0 used as idle)
 const (
 	mageFrameWidth    = 48
 	mageFrameHeight   = 48
 	mageSpriteColumns = 6
 	mageAnimFPS       = 8
+
+	goblinFrameWidth    = 32
+	goblinFrameHeight   = 32
+	goblinSpriteColumns = 10
+	goblinAnimFPS       = 8
 )
 
 type Game struct {
@@ -33,6 +38,11 @@ func New() (*Game, error) {
 		return nil, err
 	}
 
+	goblinSprite, err := loadImage("images/characters/goblin/sprite.png")
+	if err != nil {
+		return nil, err
+	}
+
 	cfg := scene.BattleSceneConfig{
 		FloorImagePath:      "images/battle/floor/stone.png",
 		PlayerSpriteSheet:   playerSprite,
@@ -40,6 +50,11 @@ func New() (*Game, error) {
 		PlayerFrameHeight:   mageFrameHeight,
 		PlayerSpriteColumns: mageSpriteColumns,
 		PlayerAnimFPS:       mageAnimFPS,
+		GoblinSpriteSheet:   goblinSprite,
+		GoblinFrameWidth:    goblinFrameWidth,
+		GoblinFrameHeight:   goblinFrameHeight,
+		GoblinSpriteColumns: goblinSpriteColumns,
+		GoblinAnimFPS:       goblinAnimFPS,
 	}
 
 	battleScene, err := scene.NewBattleScene(assets.Images, cfg)
