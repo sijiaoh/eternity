@@ -15,9 +15,21 @@
 ## ECS架构
 
 采用Entity-Component-System模式：
-- **Entity**：仅为ID（uint32 + Generation），无逻辑
+- **Entity**：仅为ID（uint32 + Generation），无逻辑。ID从1开始，零值`Entity{}`永远无效
 - **Component**：纯数据，存储于`Storage[T]`
 - **System**：纯逻辑，遍历组件执行行为
+
+### World API
+
+| 方法 | 说明 |
+|------|------|
+| `Spawn()` | 创建单个实体 |
+| `Despawn(e)` | 移除实体，回收槽位 |
+| `Alive(e)` | 检查实体是否存活且Generation匹配 |
+| `AllAlive()` | 返回所有存活实体的切片 |
+| `SpawnBatch(n)` | 批量创建n个实体 |
+| `DespawnBatch(es)` | 批量移除实体 |
+| `Count()` | 返回存活实体数量 |
 
 ### 依赖关系
 

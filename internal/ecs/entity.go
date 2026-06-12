@@ -8,6 +8,7 @@ type Entity struct {
 }
 
 // Valid returns true if the entity has been assigned.
+// Entity{} (zero value with ID=0) is always invalid since World.Spawn() starts from ID=1.
 func (e Entity) Valid() bool {
-	return e.ID > 0 || e.Generation > 0
+	return e.ID > 0
 }
