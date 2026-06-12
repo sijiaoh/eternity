@@ -3,8 +3,8 @@
 ## 免费素材
 
 从网络下载免费素材时，需要注意版权问题。
-由于这是一个开源项目，牵扯到再分发，所以必须使用CC0协议的素材。
-并且把下载URL以及版权信息记录在`[素材名].source.md`文件中。
+素材需满足：**免费 + 可商用**。
+把下载URL以及版权信息记录在`[素材名].source.md`文件中。
 
 ### `.source.md` 格式要求
 
@@ -15,7 +15,7 @@
 
 - **URL**: [下载链接]
 - **作者**: [作者名] ([作者链接])
-- **许可证**: CC0 1.0 (Public Domain)
+- **许可证**: [许可证名称]
 
 ## 许可证说明
 
@@ -84,4 +84,3 @@ assets/images/
 
 - 目录按领域模型命名：`characters/hero/`、`characters/enemy/`、`ui/buttons/`
 - 图片按用途命名：`sprite.png`、`portrait.png`、`icon.png`
-- 每个图片都需要对应的 `.source.md` 或 `.prompt.md`
