@@ -200,3 +200,34 @@ func TestStorage_SetWithStaleReference(t *testing.T) {
 		t.Errorf("new entity position = (%v, %v), want (100, 200)", pos.X, pos.Y)
 	}
 }
+
+func TestStorage_RemoveWithStaleReference(t *testing.T) {
+	s := NewStorage[testPosition](10)
+
+	old := Entity{ID: 1, Generation: 0}
+	s.Set(old, testPosition{X: 10, Y: 20})
+
+	// Simulate entity reuse with new generation
+	newEntity := Entity{ID: 1, Generation: 1}
+	s.Set(newEntity, testPosition{X: 100, Y: 200})
+
+	// Stale reference Remove should not affect new entity
+	s.Remove(old)
+
+	// New entity should still exist
+	if !s.Has(newEntity) {
+		t.Error("new entity should still exist after stale Remove")
+	}
+
+	pos, ok := s.Get(newEntity)
+	if !ok {
+		t.Fatal("new entity should have component")
+	}
+	if pos.X != 100 || pos.Y != 200 {
+		t.Errorf("new entity position = (%v, %v), want (100, 200)", pos.X, pos.Y)
+	}
+
+	if s.Len() != 1 {
+		t.Errorf("Len = %d, want 1", s.Len())
+	}
+}

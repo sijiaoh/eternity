@@ -3,6 +3,8 @@
 package system
 
 import (
+	"image"
+
 	"eternity/internal/component"
 	"eternity/internal/ecs"
 
@@ -45,15 +47,38 @@ func (s *SpriteSheetRenderSystem) Draw(w *ecs.World, screen *ebiten.Image) {
 			return
 		}
 
-		screenX, screenY := s.camera.WorldToScreen(pos.X, pos.Y)
-		frame := sheet.Frame(anim.Frame())
+		screenX, screenY := CameraWorldToScreen(s.camera, pos.X, pos.Y)
+		frame := SpriteSheetFrame(sheet, anim.Frame())
 		if frame == nil {
 			return
 		}
 
-		drawX, drawY := sheet.CalcDrawPosition(screenX, screenY)
+		drawX, drawY := SpriteSheetCalcDrawPosition(sheet, screenX, screenY)
 		opts := &ebiten.DrawImageOptions{}
 		opts.GeoM.Translate(drawX, drawY)
 		screen.DrawImage(frame, opts)
 	})
+}
+
+// SpriteSheetFrame returns the sub-image for the given frame index.
+func SpriteSheetFrame(sheet *component.SpriteSheet, index int) *ebiten.Image {
+	if sheet.Image == nil {
+		return nil
+	}
+
+	col := index % sheet.Columns
+	row := index / sheet.Columns
+
+	x := col * sheet.FrameWidth
+	y := row * sheet.FrameHeight
+
+	rect := image.Rect(x, y, x+sheet.FrameWidth, y+sheet.FrameHeight)
+	return sheet.Image.SubImage(rect).(*ebiten.Image)
+}
+
+// SpriteSheetCalcDrawPosition returns draw position adjusted for anchor.
+func SpriteSheetCalcDrawPosition(sheet *component.SpriteSheet, x, y float64) (drawX, drawY float64) {
+	offsetX := float64(sheet.FrameWidth) * sheet.Anchor.X
+	offsetY := float64(sheet.FrameHeight) * sheet.Anchor.Y
+	return x - offsetX, y - offsetY
 }

@@ -38,7 +38,28 @@ func (s *RenderSystem) Draw(w *ecs.World, screen *ebiten.Image) {
 			return
 		}
 
-		screenX, screenY := s.camera.WorldToScreen(pos.X, pos.Y)
-		sprite.Draw(screen, screenX, screenY)
+		screenX, screenY := CameraWorldToScreen(s.camera, pos.X, pos.Y)
+		DrawSprite(screen, sprite, screenX, screenY)
 	})
+}
+
+// DrawSprite renders a sprite at the given screen position.
+func DrawSprite(screen *ebiten.Image, sprite *component.Sprite, x, y float64) {
+	if sprite.Image == nil {
+		return
+	}
+
+	w, h := sprite.Image.Bounds().Dx(), sprite.Image.Bounds().Dy()
+	drawX, drawY := SpriteCalcDrawPosition(sprite, x, y, w, h)
+
+	opts := &ebiten.DrawImageOptions{}
+	opts.GeoM.Translate(drawX, drawY)
+	screen.DrawImage(sprite.Image, opts)
+}
+
+// SpriteCalcDrawPosition returns draw position adjusted for anchor.
+func SpriteCalcDrawPosition(sprite *component.Sprite, x, y float64, imageWidth, imageHeight int) (drawX, drawY float64) {
+	offsetX := float64(imageWidth) * sprite.Anchor.X
+	offsetY := float64(imageHeight) * sprite.Anchor.Y
+	return x - offsetX, y - offsetY
 }

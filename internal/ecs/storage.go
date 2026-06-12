@@ -93,7 +93,7 @@ func (s *Storage[T]) Remove(e Entity) {
 	}
 
 	idx := s.sparse[e.ID]
-	if idx < 0 || idx >= len(s.entities) {
+	if idx < 0 || idx >= len(s.entities) || s.entities[idx].Generation != e.Generation {
 		return
 	}
 

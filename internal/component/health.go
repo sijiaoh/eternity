@@ -1,5 +1,6 @@
 package component
 
+// Health tracks current and maximum health for an entity.
 type Health struct {
 	Current int
 	Max     int
@@ -7,22 +8,4 @@ type Health struct {
 
 func NewHealth(max int) *Health {
 	return &Health{Current: max, Max: max}
-}
-
-func (h *Health) IsDead() bool {
-	return h.Current <= 0
-}
-
-func (h *Health) TakeDamage(damage int) {
-	h.Current -= damage
-	if h.Current < 0 {
-		h.Current = 0
-	}
-}
-
-func (h *Health) Heal(amount int) {
-	h.Current += amount
-	if h.Current > h.Max {
-		h.Current = h.Max
-	}
 }

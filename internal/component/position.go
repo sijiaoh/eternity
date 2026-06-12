@@ -8,11 +8,6 @@ func NewPosition(x, y float64) *Position {
 	return &Position{X: x, Y: y}
 }
 
-func (p *Position) Move(dx, dy float64) {
-	p.X += dx
-	p.Y += dy
-}
-
 type Velocity struct {
 	X, Y float64
 }

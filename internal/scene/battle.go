@@ -73,7 +73,6 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 
 	camera := component.NewCamera(playerX, playerY, 0.1)
 
-	// Create ECS world and storages
 	world := ecs.NewWorld(64)
 	components := &entity.PlayerComponents{
 		Positions:     ecs.NewStorage[component.Position](64),
@@ -85,7 +84,6 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		CameraTargets: ecs.NewStorage[component.CameraTarget](4),
 	}
 
-	// Create player entity
 	entity.CreatePlayer(world, components, entity.PlayerFactoryConfig{
 		X:           playerX,
 		Y:           playerY,
@@ -97,7 +95,6 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		AnimFPS:     cfg.PlayerAnimFPS,
 	})
 
-	// Create systems
 	inputSystem := system.NewInputSystem(components.Inputs, components.Velocities)
 	movementSystem := system.NewMovementSystem(components.Positions, components.Velocities)
 	facingSystem := system.NewFacingSystem(components.Facings, components.Velocities)
@@ -155,7 +152,7 @@ func (s *BattleScene) IsPaused() bool {
 }
 
 func (s *BattleScene) Draw(screen *ebiten.Image) {
-	offsetX, offsetY := s.camera.GetOffset()
+	offsetX, offsetY := system.CameraGetOffset(s.camera)
 	ts := float64(s.tileSize)
 
 	// Calculate tile offset for seamless scrolling (always positive)

@@ -69,7 +69,7 @@ entity.CreatePlayer(world, components, entity.PlayerFactoryConfig{
 |------|------|------|
 | 游戏逻辑 | 单位 | Position、Speed（5 units/s） |
 | Ebiten接口 | 像素 | ScreenWidth、Draw坐标 |
-| 视觉效果 | 像素 | Camera.GetOffset()、渲染偏移量 |
+| 视觉效果 | 像素 | system.CameraGetOffset()、渲染偏移量 |
 
 ```go
 // ✅ 正确：位置和速度使用单位
