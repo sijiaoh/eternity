@@ -9,8 +9,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-// PlayerComponents holds all storages needed to create a player entity.
-type PlayerComponents struct {
+// MageComponents holds all storages needed to create the mage entity.
+type MageComponents struct {
 	Positions     *ecs.Storage[component.Position]
 	Velocities    *ecs.Storage[component.Velocity]
 	Inputs        *ecs.Storage[component.InputControlled]
@@ -20,8 +20,8 @@ type PlayerComponents struct {
 	CameraTargets *ecs.Storage[component.CameraTarget]
 }
 
-// PlayerFactoryConfig contains parameters for creating a player.
-type PlayerFactoryConfig struct {
+// MageFactoryConfig contains parameters for creating the mage.
+type MageFactoryConfig struct {
 	X, Y        float64
 	Speed       float64
 	SpriteSheet *ebiten.Image
@@ -32,8 +32,8 @@ type PlayerFactoryConfig struct {
 	SizeInUnits float64 // Target width in world units; 0 = native size
 }
 
-// CreatePlayer spawns a player entity with all required components.
-func CreatePlayer(w *ecs.World, c *PlayerComponents, cfg PlayerFactoryConfig) ecs.Entity {
+// CreateMage spawns the mage entity (the player-controlled character) with all required components.
+func CreateMage(w *ecs.World, c *MageComponents, cfg MageFactoryConfig) ecs.Entity {
 	e := w.Spawn()
 
 	c.Positions.Set(e, component.Position{X: cfg.X, Y: cfg.Y})

@@ -30,11 +30,11 @@ type Scenario struct {
 // file only overrides what it names. Pointers distinguish "unset" from a meaningful zero (e.g.
 // TimeScale 0 = paused, Goblin false = suppress the goblin).
 type Battle struct {
-	PlayerX   *float64 `json:"playerX,omitempty"`   // player start X in world units; default: screen center
-	PlayerY   *float64 `json:"playerY,omitempty"`   // player start Y in world units; default: screen center
+	MageX     *float64 `json:"mageX,omitempty"`     // mage start X in world units; default: screen center
+	MageY     *float64 `json:"mageY,omitempty"`     // mage start Y in world units; default: screen center
 	Goblin    *bool    `json:"goblin,omitempty"`    // spawn the goblin; default: true
-	GoblinX   *float64 `json:"goblinX,omitempty"`   // goblin start X in world units; default: offset from player
-	GoblinY   *float64 `json:"goblinY,omitempty"`   // goblin start Y in world units; default: offset from player
+	GoblinX   *float64 `json:"goblinX,omitempty"`   // goblin start X in world units; default: offset from mage
+	GoblinY   *float64 `json:"goblinY,omitempty"`   // goblin start Y in world units; default: offset from mage
 	Dialogue  bool     `json:"dialogue,omitempty"`  // start already in the sample dialogue; default: false
 	TimeScale *float64 `json:"timeScale,omitempty"` // initial time scale (0 = paused, 0.5 = slow-mo); default: 1.0
 }

@@ -14,7 +14,7 @@ func TestParse(t *testing.T) {
 			"scene": "battle",
 			"locale": "en",
 			"battle": {
-				"playerX": 1.5, "playerY": 2.5,
+				"mageX": 1.5, "mageY": 2.5,
 				"goblin": false,
 				"goblinX": 7, "goblinY": 8,
 				"dialogue": true,
@@ -31,11 +31,11 @@ func TestParse(t *testing.T) {
 			t.Errorf("Locale = %q, want en", s.Locale)
 		}
 		b := s.Battle
-		if got := derefF(t, b.PlayerX); got != 1.5 {
-			t.Errorf("PlayerX = %v, want 1.5", got)
+		if got := derefF(t, b.MageX); got != 1.5 {
+			t.Errorf("MageX = %v, want 1.5", got)
 		}
-		if got := derefF(t, b.PlayerY); got != 2.5 {
-			t.Errorf("PlayerY = %v, want 2.5", got)
+		if got := derefF(t, b.MageY); got != 2.5 {
+			t.Errorf("MageY = %v, want 2.5", got)
 		}
 		if b.Goblin == nil || *b.Goblin {
 			t.Errorf("Goblin = %v, want explicit false", b.Goblin)
@@ -60,7 +60,7 @@ func TestParse(t *testing.T) {
 			t.Fatalf("Parse: %v", err)
 		}
 		b := s.Battle
-		if b.PlayerX != nil || b.PlayerY != nil || b.GoblinX != nil || b.GoblinY != nil {
+		if b.MageX != nil || b.MageY != nil || b.GoblinX != nil || b.GoblinY != nil {
 			t.Error("position fields should be nil when omitted")
 		}
 		if b.Goblin != nil {
@@ -131,7 +131,7 @@ func TestBattleIsZero(t *testing.T) {
 	}
 	x := 1.0
 	for name, b := range map[string]Battle{
-		"position":  {PlayerX: &x},
+		"position":  {MageX: &x},
 		"goblin":    {Goblin: new(bool)},
 		"dialogue":  {Dialogue: true},
 		"timeScale": {TimeScale: &x},

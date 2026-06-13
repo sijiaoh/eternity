@@ -7,7 +7,7 @@ import (
 	"eternity/internal/scenario"
 )
 
-// goblinSpawnOffset is how far the goblin spawns from the player by default, in world units.
+// goblinSpawnOffset is how far the goblin spawns from the mage by default, in world units.
 const goblinSpawnOffset = 3.0
 
 // The situation resolvers below turn an optional scenario.Battle into the concrete values
@@ -15,18 +15,18 @@ const goblinSpawnOffset = 3.0
 // live in this build-tag-free file (rather than inline in the ebiten-gated battle.go) so the
 // situation logic — the part with debug/test value — is unit-testable in a headless build.
 
-// resolvePlayerStart returns the player's start position in world units, defaulting to the
-// screen center (the normal player spawn) when the scenario leaves it unset.
-func resolvePlayerStart(b scenario.Battle) (x, y float64) {
+// resolveMageStart returns the mage's start position in world units, defaulting to the
+// screen center (the normal mage spawn) when the scenario leaves it unset.
+func resolveMageStart(b scenario.Battle) (x, y float64) {
 	cx := config.PixelsToUnits(config.ScreenWidth / 2)
 	cy := config.PixelsToUnits(config.ScreenHeight / 2)
-	return coalesce(b.PlayerX, cx), coalesce(b.PlayerY, cy)
+	return coalesce(b.MageX, cx), coalesce(b.MageY, cy)
 }
 
 // resolveGoblinStart returns the goblin's start position, defaulting to a fixed offset from the
-// player so the two spawn near each other as in normal play.
-func resolveGoblinStart(b scenario.Battle, playerX, playerY float64) (x, y float64) {
-	return coalesce(b.GoblinX, playerX+goblinSpawnOffset), coalesce(b.GoblinY, playerY+goblinSpawnOffset)
+// mage so the two spawn near each other as in normal play.
+func resolveGoblinStart(b scenario.Battle, mageX, mageY float64) (x, y float64) {
+	return coalesce(b.GoblinX, mageX+goblinSpawnOffset), coalesce(b.GoblinY, mageY+goblinSpawnOffset)
 }
 
 // spawnGoblin reports whether the goblin should be created. The default is true, matching normal

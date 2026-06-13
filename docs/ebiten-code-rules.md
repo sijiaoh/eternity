@@ -80,7 +80,7 @@ cameraSystem.Update(world, dt)         // 7. 跟随摄像机
 使用工厂函数组合组件：
 
 ```go
-entity.CreatePlayer(world, components, entity.PlayerFactoryConfig{
+entity.CreateMage(world, components, entity.MageFactoryConfig{
     X: 2.0, Y: 3.0,
     Speed: 5.0,
     // ...
@@ -126,7 +126,7 @@ x := config.UnitsToPixels(pos.X) // 用于 DrawImage
 
 ```go
 // 创建实体时指定目标尺寸
-entity.CreatePlayer(world, components, entity.PlayerFactoryConfig{
+entity.CreateMage(world, components, entity.MageFactoryConfig{
     SizeInUnits: 1.5, // 显示为1.5个世界单位宽
 })
 ```

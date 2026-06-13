@@ -102,7 +102,7 @@ func New(bundle *i18n.Bundle, sc scenario.Scenario) (*Game, error) {
 // loadDeps decodes the sprites and fonts shared across scenes and packs the battle scene's
 // config, so the per-scene builders only assemble — they don't touch the filesystem.
 func loadDeps(bundle *i18n.Bundle) (*deps, error) {
-	playerSprite, err := loadImage("images/characters/mage/sprite.png")
+	mageSprite, err := loadImage("images/characters/mage/sprite.png")
 	if err != nil {
 		return nil, err
 	}
@@ -133,11 +133,11 @@ func loadDeps(bundle *i18n.Bundle) (*deps, error) {
 		promptFont: promptFont,
 		battleConfig: scene.BattleSceneConfig{
 			FloorImagePath:      "images/battle/floor/stone.png",
-			PlayerSpriteSheet:   playerSprite,
-			PlayerFrameWidth:    mageFrameWidth,
-			PlayerFrameHeight:   mageFrameHeight,
-			PlayerSpriteColumns: mageSpriteColumns,
-			PlayerAnimFPS:       mageAnimFPS,
+			MageSpriteSheet:     mageSprite,
+			MageFrameWidth:      mageFrameWidth,
+			MageFrameHeight:     mageFrameHeight,
+			MageSpriteColumns:   mageSpriteColumns,
+			MageAnimFPS:         mageAnimFPS,
 			GoblinSpriteSheet:   goblinSprite,
 			GoblinFrameWidth:    goblinFrameWidth,
 			GoblinFrameHeight:   goblinFrameHeight,

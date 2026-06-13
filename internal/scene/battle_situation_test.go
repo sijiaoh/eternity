@@ -17,19 +17,19 @@ func ptrB(v bool) *bool       { return &v }
 // scene boots with: each field overrides when set, and falls back to the normal-play default
 // when unset. They run headless, standing in for the ebiten-gated NewBattleScene.
 
-func TestResolvePlayerStart(t *testing.T) {
+func TestResolveMageStart(t *testing.T) {
 	wantX := config.PixelsToUnits(config.ScreenWidth / 2)
 	wantY := config.PixelsToUnits(config.ScreenHeight / 2)
 
 	t.Run("defaults to screen center", func(t *testing.T) {
-		x, y := resolvePlayerStart(scenario.Battle{})
+		x, y := resolveMageStart(scenario.Battle{})
 		if x != wantX || y != wantY {
 			t.Fatalf("got (%v, %v), want screen center (%v, %v)", x, y, wantX, wantY)
 		}
 	})
 
 	t.Run("uses the scenario position when set", func(t *testing.T) {
-		x, y := resolvePlayerStart(scenario.Battle{PlayerX: ptrF(1.5), PlayerY: ptrF(2.5)})
+		x, y := resolveMageStart(scenario.Battle{MageX: ptrF(1.5), MageY: ptrF(2.5)})
 		if x != 1.5 || y != 2.5 {
 			t.Fatalf("got (%v, %v), want (1.5, 2.5)", x, y)
 		}
@@ -37,10 +37,10 @@ func TestResolvePlayerStart(t *testing.T) {
 }
 
 func TestResolveGoblinStart(t *testing.T) {
-	t.Run("defaults to an offset from the player", func(t *testing.T) {
+	t.Run("defaults to an offset from the mage", func(t *testing.T) {
 		x, y := resolveGoblinStart(scenario.Battle{}, 10, 20)
 		if x != 10+goblinSpawnOffset || y != 20+goblinSpawnOffset {
-			t.Fatalf("got (%v, %v), want player+offset", x, y)
+			t.Fatalf("got (%v, %v), want mage+offset", x, y)
 		}
 	})
 

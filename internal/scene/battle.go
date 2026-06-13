@@ -51,11 +51,11 @@ type BattleScene struct {
 
 type BattleSceneConfig struct {
 	FloorImagePath      string
-	PlayerSpriteSheet   *ebiten.Image
-	PlayerSpriteColumns int
-	PlayerFrameWidth    int
-	PlayerFrameHeight   int
-	PlayerAnimFPS       float64
+	MageSpriteSheet     *ebiten.Image
+	MageSpriteColumns   int
+	MageFrameWidth      int
+	MageFrameHeight     int
+	MageAnimFPS         float64
 	GoblinSpriteSheet   *ebiten.Image
 	GoblinSpriteColumns int
 	GoblinFrameWidth    int
@@ -89,9 +89,9 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		return nil, err
 	}
 
-	playerX, playerY := resolvePlayerStart(cfg.Situation)
+	mageX, mageY := resolveMageStart(cfg.Situation)
 
-	camera := component.NewCamera(playerX, playerY, 0.1)
+	camera := component.NewCamera(mageX, mageY, 0.1)
 
 	world := ecs.NewWorld(64)
 
@@ -102,14 +102,14 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	animations := ecs.NewStorage[component.Animation](64)
 	spriteSheets := ecs.NewStorage[component.SpriteSheet](64)
 
-	// Player-specific storages
+	// Mage-specific storages
 	inputs := ecs.NewStorage[component.InputControlled](8)
 	cameraTargets := ecs.NewStorage[component.CameraTarget](4)
 
 	// Goblin-specific storages
 	aiFollows := ecs.NewStorage[component.AIFollow](32)
 
-	playerComponents := &entity.PlayerComponents{
+	mageComponents := &entity.MageComponents{
 		Positions:     positions,
 		Velocities:    velocities,
 		Inputs:        inputs,
@@ -128,28 +128,28 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		SpriteSheets: spriteSheets,
 	}
 
-	player := entity.CreatePlayer(world, playerComponents, entity.PlayerFactoryConfig{
-		X:           playerX,
-		Y:           playerY,
+	mage := entity.CreateMage(world, mageComponents, entity.MageFactoryConfig{
+		X:           mageX,
+		Y:           mageY,
 		Speed:       5.0, // units per second
 		SizeInUnits: 1.0,
-		SpriteSheet: cfg.PlayerSpriteSheet,
-		FrameWidth:  cfg.PlayerFrameWidth,
-		FrameHeight: cfg.PlayerFrameHeight,
-		Columns:     cfg.PlayerSpriteColumns,
-		AnimFPS:     cfg.PlayerAnimFPS,
+		SpriteSheet: cfg.MageSpriteSheet,
+		FrameWidth:  cfg.MageFrameWidth,
+		FrameHeight: cfg.MageFrameHeight,
+		Columns:     cfg.MageSpriteColumns,
+		AnimFPS:     cfg.MageAnimFPS,
 	})
 
 	// Create goblin if the sprite is present and the scenario doesn't suppress it.
 	if cfg.GoblinSpriteSheet != nil && spawnGoblin(cfg.Situation) {
-		goblinX, goblinY := resolveGoblinStart(cfg.Situation, playerX, playerY)
+		goblinX, goblinY := resolveGoblinStart(cfg.Situation, mageX, mageY)
 		entity.CreateGoblin(world, goblinComponents, entity.GoblinFactoryConfig{
 			X:     goblinX,
 			Y:     goblinY,
-			Speed: 3.0, // slower than player
-			// Body fills ~half the 64px frame; 2.0 keeps it close to player size.
+			Speed: 3.0, // slower than the mage
+			// Body fills ~half the 64px frame; 2.0 keeps it close to mage size.
 			SizeInUnits: 2.0,
-			Target:      player,
+			Target:      mage,
 			SpriteSheet: cfg.GoblinSpriteSheet,
 			FrameWidth:  cfg.GoblinFrameWidth,
 			FrameHeight: cfg.GoblinFrameHeight,
