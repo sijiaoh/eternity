@@ -14,6 +14,7 @@ import (
 	"eternity/internal/ecs/system"
 	"eternity/internal/entity"
 	"eternity/internal/i18n"
+	"eternity/internal/scenario"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -62,6 +63,10 @@ type BattleSceneConfig struct {
 	GoblinAnimFPS       float64
 	DialogueFont        text.Face
 	Bundle              *i18n.Bundle
+
+	// Situation is the optional debug/test scenario applied at construction. Its zero value
+	// reproduces normal play, so the player path is unaffected.
+	Situation scenario.Battle
 }
 
 func loadImage(fsys fs.FS, path string) (*ebiten.Image, error) {
@@ -84,8 +89,7 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		return nil, err
 	}
 
-	playerX := config.PixelsToUnits(config.ScreenWidth / 2)
-	playerY := config.PixelsToUnits(config.ScreenHeight / 2)
+	playerX, playerY := resolvePlayerStart(cfg.Situation)
 
 	camera := component.NewCamera(playerX, playerY, 0.1)
 
@@ -136,11 +140,12 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		AnimFPS:     cfg.PlayerAnimFPS,
 	})
 
-	// Create goblin if sprite is provided
-	if cfg.GoblinSpriteSheet != nil {
+	// Create goblin if the sprite is present and the scenario doesn't suppress it.
+	if cfg.GoblinSpriteSheet != nil && spawnGoblin(cfg.Situation) {
+		goblinX, goblinY := resolveGoblinStart(cfg.Situation, playerX, playerY)
 		entity.CreateGoblin(world, goblinComponents, entity.GoblinFactoryConfig{
-			X:     playerX + 3.0,
-			Y:     playerY + 3.0,
+			X:     goblinX,
+			Y:     goblinY,
 			Speed: 3.0, // slower than player
 			// Body fills ~half the 64px frame; 2.0 keeps it close to player size.
 			SizeInUnits: 2.0,
@@ -170,8 +175,16 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	dialogueSystem := system.NewDialogueSystem(dialogue)
 	dialogueRenderSystem := system.NewDialogueRenderSystem(dialogue, portraits, cfg.DialogueFont)
 
+	// Start the scenario's initial dialogue (nil when it doesn't ask, leaving the dialogue
+	// inactive). Active dialogue gates the game systems on the first Update (see Update), so a
+	// start-in-dialogue scenario opens paused on the first line.
+	dialogue.Start(initialDialogue(cfg.Situation, cfg.Bundle))
+
+	clock := component.NewClock()
+	clock.SetScale(resolveTimeScale(cfg.Situation))
+
 	return &BattleScene{
-		clock:                component.NewClock(),
+		clock:                clock,
 		camera:               camera,
 		floorTile:            tile,
 		tileSize:             tile.Bounds().Dx(),
@@ -258,17 +271,6 @@ func (s *BattleScene) cycleLocale() {
 			s.bundle.SetLocale(locales[(i+1)%len(locales)])
 			return
 		}
-	}
-}
-
-// sampleDialogue is the demo script for manual verification: a portrait line, a portrait-less
-// narration line, and a long line that exercises CJK wrapping. Text and speaker name come from
-// i18n, so the same script renders in whichever locale the bundle currently holds.
-func sampleDialogue(b *i18n.Bundle) []component.DialogueLine {
-	return []component.DialogueLine{
-		{Speaker: b.Get("speaker.mage"), Portrait: "mage", Text: b.Get("dialogue.intro.warning")},
-		{Speaker: "", Portrait: "", Text: b.Get("dialogue.intro.silence")},
-		{Speaker: b.Get("speaker.mage"), Portrait: "mage", Text: b.Get("dialogue.intro.ready")},
 	}
 }
 

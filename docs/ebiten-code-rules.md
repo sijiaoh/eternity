@@ -12,6 +12,22 @@
 | `scene` | 场景接口与生命周期、`Manager`场景切换、System调度 |
 | `game` | ebiten.Game实现、组装场景与切换回调 |
 | `i18n` | 多语言文本：key→文本查表、locale 数据文件内嵌、默认语言回退 |
+| `scenario` | 调试启动配置的格式与解析（纯数据，无 ebiten）：选哪个场景 + 场景内初始情境 |
+
+## 调试启动
+
+仅供人工调试/测试，不影响正常玩家启动（不传参即走标题页）。两种入口互斥（同传报错）：
+
+- `-scene <name>`：直达某场景，套用其默认情境。可用场景名由 `internal/game` 注册表登记（场景名 const 为单一来源），当前为 `title`、`battle`。
+- `-scenario <path>`：加载 JSON 文件，自包含地复现「场景 + 场景内具体情境」（参考 VS Code launch.json）。`scene` 取值同上；顶层 `locale` 与场景无关，对任意被选中的场景（含 title）生效，可按指定语言复现任意场景；情境字段含义与默认值见 `internal/scenario` 的 Go doc，省略即回退正常游玩默认值。
+
+最小示例（英文、进场即对话、慢动作、不生成 goblin）：
+
+```json
+{"scene": "battle", "locale": "en", "battle": {"dialogue": true, "timeScale": 0.5, "goblin": false}}
+```
+
+未知场景名、未知字段、非法 locale、以及为非 battle 场景设置 battle 情境，都会清晰报错。`locale` 在 `game.New` 构建被选中场景前应用到共享 bundle（与场景无关，故 title/对话等都用对语言）；场景构建经 `BattleSceneConfig.Situation` 接收情境，应用逻辑（位置、对话、goblin 开关、time scale）放在 `scene` 包无构建标签的 `battle_situation.go`，故可无头测试。
 
 ## 场景切换
 
