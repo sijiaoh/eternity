@@ -33,35 +33,25 @@ type GoblinFactoryConfig struct {
 }
 
 // CreateGoblin spawns a goblin entity with follow AI.
-// The goblin sprite sheet has only left-facing frames, so we use FlipOnRight
-// to mirror the sprite when facing right. All directions map to the same frames.
+// Each 11-frame row is one facing direction (down/left/up/right), with frame 0
+// as the idle pose — see sprite.source.md for the full sheet layout.
 func CreateGoblin(w *ecs.World, c *GoblinComponents, cfg GoblinFactoryConfig) ecs.Entity {
 	e := w.Spawn()
 
 	c.Positions.Set(e, component.Position{X: cfg.X, Y: cfg.Y})
 	c.Velocities.Set(e, component.Velocity{X: 0, Y: 0})
 	c.AIFollows.Set(e, component.AIFollow{Target: cfg.Target, Speed: cfg.Speed})
-	c.Facings.Set(e, component.Facing{Direction: component.FacingLeft, Walking: false})
-
-	// Goblin sprite sheet layout (10 columns, knife goblin = first 5 rows):
-	// Row 0: Idle (4 frames)
-	// Row 1: Gesture (4 frames)
-	// Row 2: Walk (4 frames)
-	// Row 3: Attack (6 frames)
-	// Row 4: Death (4 frames)
-	// All frames face left; FlipOnRight handles right direction.
-	idleStart := 0 // Row 0
-	walkStart := 20 // Row 2 (2 * 10 columns)
+	c.Facings.Set(e, component.Facing{Direction: component.FacingDown, Walking: false})
 
 	states := []component.AnimationState{
-		{Name: "idle_down", StartFrame: idleStart, FrameCount: 4, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "idle_left", StartFrame: idleStart, FrameCount: 4, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "idle_up", StartFrame: idleStart, FrameCount: 4, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "idle_right", StartFrame: idleStart, FrameCount: 4, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_down", StartFrame: walkStart, FrameCount: 4, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_left", StartFrame: walkStart, FrameCount: 4, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_up", StartFrame: walkStart, FrameCount: 4, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_right", StartFrame: walkStart, FrameCount: 4, FPS: cfg.AnimFPS, Loop: true},
+		{Name: "idle_down", StartFrame: 0, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
+		{Name: "walk_down", StartFrame: 0, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
+		{Name: "idle_left", StartFrame: 11, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
+		{Name: "walk_left", StartFrame: 11, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
+		{Name: "idle_up", StartFrame: 22, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
+		{Name: "walk_up", StartFrame: 22, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
+		{Name: "idle_right", StartFrame: 33, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
+		{Name: "walk_right", StartFrame: 33, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
 	}
 	c.Animations.Set(e, *component.NewAnimation(states))
 
@@ -71,7 +61,6 @@ func CreateGoblin(w *ecs.World, c *GoblinComponents, cfg GoblinFactoryConfig) ec
 		FrameHeight: cfg.FrameHeight,
 		Columns:     cfg.Columns,
 		Anchor:      component.AnchorCenter(),
-		FlipOnRight: true,
 		SizeInUnits: cfg.SizeInUnits,
 	})
 

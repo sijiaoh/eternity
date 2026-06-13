@@ -13,18 +13,17 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-// Sprite sheet layout: 6 columns x 4+ rows
-// Row order: down, left, up, right
-// Per row: 6 walk frames (frame 0 used as idle)
 const (
+	// Mage: 6 columns x 4 rows, rows = down/left/up/right (frame 0 = idle).
 	mageFrameWidth    = 48
 	mageFrameHeight   = 48
 	mageSpriteColumns = 6
 	mageAnimFPS       = 8
 
-	goblinFrameWidth    = 32
-	goblinFrameHeight   = 32
-	goblinSpriteColumns = 10
+	// LPC goblin: 11 columns x 5 rows, rows = down/left/up/right/death.
+	goblinFrameWidth    = 64
+	goblinFrameHeight   = 64
+	goblinSpriteColumns = 11
 	goblinAnimFPS       = 8
 )
 

@@ -31,7 +31,6 @@ type BattleScene struct {
 	aiFollowSystem       *system.AIFollowSystem
 	movementSystem       *system.MovementSystem
 	facingSystem         *system.FacingSystem
-	spriteFlipSystem     *system.SpriteFlipSystem
 	animationStateSystem *system.AnimationStateSystem
 	animationSystem      *system.AnimationSystem
 	cameraSystem         *system.CameraSystem
@@ -132,7 +131,8 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 			X:           playerX + 3.0,
 			Y:           playerY + 3.0,
 			Speed:       3.0, // slower than player
-			SizeInUnits: 1.0,
+			// Body fills ~half the 64px frame; 2.0 keeps it close to player size.
+			SizeInUnits: 2.0,
 			Target:      player,
 			SpriteSheet: cfg.GoblinSpriteSheet,
 			FrameWidth:  cfg.GoblinFrameWidth,
@@ -146,7 +146,6 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	aiFollowSystem := system.NewAIFollowSystem(aiFollows, positions, velocities)
 	movementSystem := system.NewMovementSystem(positions, velocities)
 	facingSystem := system.NewFacingSystem(facings, velocities)
-	spriteFlipSystem := system.NewSpriteFlipSystem(facings, spriteSheets)
 	animationStateSystem := system.NewAnimationStateSystem(animations, facings)
 	animationSystem := system.NewAnimationSystem(animations)
 	cameraSystem := system.NewCameraSystem(cameraTargets, positions, camera)
@@ -162,7 +161,6 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		aiFollowSystem:       aiFollowSystem,
 		movementSystem:       movementSystem,
 		facingSystem:         facingSystem,
-		spriteFlipSystem:     spriteFlipSystem,
 		animationStateSystem: animationStateSystem,
 		animationSystem:      animationSystem,
 		cameraSystem:         cameraSystem,
@@ -179,7 +177,6 @@ func (s *BattleScene) Update() error {
 	s.aiFollowSystem.Update(s.world, dt)
 	s.movementSystem.Update(s.world, dt)
 	s.facingSystem.Update(s.world, dt)
-	s.spriteFlipSystem.Update(s.world, dt)
 	s.animationStateSystem.Update(s.world, dt)
 	s.animationSystem.Update(s.world, dt)
 	s.cameraSystem.Update(s.world, dt)

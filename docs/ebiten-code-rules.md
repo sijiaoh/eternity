@@ -49,10 +49,9 @@ inputSystem.Update(world, dt)          // 1. 读取输入
 aiFollowSystem.Update(world, dt)       // 2. AI跟随（更新敌人速度）
 movementSystem.Update(world, dt)       // 3. 应用移动
 facingSystem.Update(world, dt)         // 4. 更新朝向
-spriteFlipSystem.Update(world, dt)     // 5. 精灵翻转（单方向素材）
-animationStateSystem.Update(world, dt) // 6. 设置动画状态
-animationSystem.Update(world, dt)      // 7. 更新动画帧
-cameraSystem.Update(world, dt)         // 8. 跟随摄像机
+animationStateSystem.Update(world, dt) // 5. 设置动画状态
+animationSystem.Update(world, dt)      // 6. 更新动画帧
+cameraSystem.Update(world, dt)         // 7. 跟随摄像机
 ```
 
 ### 创建实体

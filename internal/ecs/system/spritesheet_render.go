@@ -61,14 +61,8 @@ func (s *SpriteSheetRenderSystem) Draw(w *ecs.World, screen *ebiten.Image) {
 		)
 
 		opts := &ebiten.DrawImageOptions{}
-		// GeoM.Scale left-multiplies and affects existing tx/ty values.
-		// GeoM.Translate simply adds to tx/ty without affecting scale.
-		// Therefore, transformations must be applied in execution order:
-		// flip → flip_offset → scale → position
-		if sheet.FlipH {
-			opts.GeoM.Scale(-1, 1)
-			opts.GeoM.Translate(float64(sheet.FrameWidth), 0)
-		}
+		// GeoM.Scale left-multiplies tx/ty; GeoM.Translate adds without scaling.
+		// Apply in execution order: scale → position.
 		opts.GeoM.Scale(scale, scale)
 		opts.GeoM.Translate(drawX, drawY)
 		screen.DrawImage(frame, opts)
