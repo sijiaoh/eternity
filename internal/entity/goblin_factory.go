@@ -46,12 +46,12 @@ func CreateGoblin(w *ecs.World, c *GoblinComponents, cfg GoblinFactoryConfig) ec
 	states := []component.AnimationState{
 		{Name: "idle_down", StartFrame: 0, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
 		{Name: "walk_down", StartFrame: 0, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "idle_left", StartFrame: 11, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_left", StartFrame: 11, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
+		{Name: "idle_left", StartFrame: 33, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
+		{Name: "walk_left", StartFrame: 33, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
 		{Name: "idle_up", StartFrame: 22, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
 		{Name: "walk_up", StartFrame: 22, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "idle_right", StartFrame: 33, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_right", StartFrame: 33, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
+		{Name: "idle_right", StartFrame: 11, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
+		{Name: "walk_right", StartFrame: 11, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
 	}
 	c.Animations.Set(e, *component.NewAnimation(states))
 
