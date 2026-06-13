@@ -13,6 +13,7 @@ import (
 	"eternity/internal/ecs"
 	"eternity/internal/ecs/system"
 	"eternity/internal/entity"
+	"eternity/internal/i18n"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -24,6 +25,7 @@ type BattleScene struct {
 	camera    *component.Camera
 	floorTile *ebiten.Image
 	tileSize  int
+	bundle    *i18n.Bundle
 
 	// ECS
 	world *ecs.World
@@ -59,6 +61,7 @@ type BattleSceneConfig struct {
 	GoblinFrameHeight   int
 	GoblinAnimFPS       float64
 	DialogueFont        text.Face
+	Bundle              *i18n.Bundle
 }
 
 func loadImage(fsys fs.FS, path string) (*ebiten.Image, error) {
@@ -136,9 +139,9 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	// Create goblin if sprite is provided
 	if cfg.GoblinSpriteSheet != nil {
 		entity.CreateGoblin(world, goblinComponents, entity.GoblinFactoryConfig{
-			X:           playerX + 3.0,
-			Y:           playerY + 3.0,
-			Speed:       3.0, // slower than player
+			X:     playerX + 3.0,
+			Y:     playerY + 3.0,
+			Speed: 3.0, // slower than player
 			// Body fills ~half the 64px frame; 2.0 keeps it close to player size.
 			SizeInUnits: 2.0,
 			Target:      player,
@@ -172,6 +175,7 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		camera:               camera,
 		floorTile:            tile,
 		tileSize:             tile.Bounds().Dx(),
+		bundle:               cfg.Bundle,
 		world:                world,
 		inputSystem:          inputSystem,
 		aiFollowSystem:       aiFollowSystem,
@@ -215,9 +219,14 @@ func (s *BattleScene) Update() error {
 		return nil
 	}
 
+	// Demo trigger: press L to cycle the locale, so the next dialogue shows another language.
+	if inpututil.IsKeyJustPressed(ebiten.KeyL) {
+		s.cycleLocale()
+	}
+
 	// Demo trigger: press E to start a sample dialogue.
 	if inpututil.IsKeyJustPressed(ebiten.KeyE) {
-		s.StartDialogue(sampleDialogue())
+		s.StartDialogue(sampleDialogue(s.bundle))
 		return nil
 	}
 
@@ -239,13 +248,27 @@ func (s *BattleScene) StartDialogue(lines []component.DialogueLine) {
 	s.dialogue.Start(lines)
 }
 
+// cycleLocale advances the bundle to the next available locale, wrapping around. Text is
+// resolved when a dialogue starts, so switching here changes the language of the next dialogue.
+func (s *BattleScene) cycleLocale() {
+	locales := s.bundle.Locales()
+	current := s.bundle.Locale()
+	for i, locale := range locales {
+		if locale == current {
+			s.bundle.SetLocale(locales[(i+1)%len(locales)])
+			return
+		}
+	}
+}
+
 // sampleDialogue is the demo script for manual verification: a portrait line, a portrait-less
-// narration line, and a long line that exercises CJK wrapping.
-func sampleDialogue() []component.DialogueLine {
+// narration line, and a long line that exercises CJK wrapping. Text and speaker name come from
+// i18n, so the same script renders in whichever locale the bundle currently holds.
+func sampleDialogue(b *i18n.Bundle) []component.DialogueLine {
 	return []component.DialogueLine{
-		{Speaker: "法师", Portrait: "mage", Text: "前方就是哥布林的巢穴了，务必小心。它们成群结队，而且对闯入者毫不留情。"},
-		{Speaker: "", Portrait: "", Text: "（四周一片寂静，只有风声掠过枯草，远处似乎有什么东西在移动。）"},
-		{Speaker: "法师", Portrait: "mage", Text: "准备好了吗？按下空格、回车或鼠标左键即可继续，我们这就出发。"},
+		{Speaker: b.Get("speaker.mage"), Portrait: "mage", Text: b.Get("dialogue.intro.warning")},
+		{Speaker: "", Portrait: "", Text: b.Get("dialogue.intro.silence")},
+		{Speaker: b.Get("speaker.mage"), Portrait: "mage", Text: b.Get("dialogue.intro.ready")},
 	}
 }
 

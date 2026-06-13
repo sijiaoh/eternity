@@ -11,6 +11,7 @@
 | `entity` | 实体工厂函数（组合组件创建实体） |
 | `scene` | 场景生命周期、System调度 |
 | `game` | ebiten.Game实现、场景切换 |
+| `i18n` | 多语言文本：key→文本查表、locale 数据文件内嵌、默认语言回退 |
 
 ## ECS架构
 
@@ -179,4 +180,22 @@ clock.SetScale(0.5)  // 慢动作
 clock.Pause()        // 暂停，保存scale=0.5
 clock.Resume()       // 恢复scale=0.5（而非默认1.0）
 ```
+
+## 多语言（i18n）
+
+所有用户可见文本（窗口标题、对话、UI文案）必须经`i18n.Bundle`取得，代码中不留硬编码字符串。单一`Bundle`实例由`main`通过`i18n.New()`创建，经`game.New`注入Scene，是文本唯一来源。locale数据文件的格式与新增语言规则见`internal/i18n/locales/AGENTS.md`。
+
+### Bundle API
+
+| 方法 | 说明 |
+|------|------|
+| `i18n.New()` | 加载内嵌locales，默认语言`DefaultLocale="zh"`（生产入口） |
+| `i18n.Load(fsys, locale)` | 从自定义`fs.FS`加载（测试用） |
+| `Get(key)` | 取当前语言文本，缺失按回退链处理 |
+| `SetLocale(locale)` | 切换语言；未加载的语言返回false并保持当前 |
+| `Locale()` / `Locales()` | 当前语言 / 可用语言（已排序） |
+
+### 回退规则
+
+`Get`三级回退：当前语言 → 默认语言（`zh`）→ key本身（让缺失翻译可见而非空白）。
 

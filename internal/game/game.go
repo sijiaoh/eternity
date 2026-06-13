@@ -8,6 +8,7 @@ import (
 
 	"eternity/assets"
 	"eternity/internal/config"
+	"eternity/internal/i18n"
 	"eternity/internal/scene"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -34,7 +35,7 @@ type Game struct {
 	sceneManager *scene.Manager
 }
 
-func New() (*Game, error) {
+func New(bundle *i18n.Bundle) (*Game, error) {
 	playerSprite, err := loadImage("images/characters/mage/sprite.png")
 	if err != nil {
 		return nil, err
@@ -63,6 +64,7 @@ func New() (*Game, error) {
 		GoblinSpriteColumns: goblinSpriteColumns,
 		GoblinAnimFPS:       goblinAnimFPS,
 		DialogueFont:        dialogueFont,
+		Bundle:              bundle,
 	}
 
 	battleScene, err := scene.NewBattleScene(assets.Images, cfg)
