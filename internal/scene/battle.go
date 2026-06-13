@@ -15,6 +15,8 @@ import (
 	"eternity/internal/entity"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	text "github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 type BattleScene struct {
@@ -35,8 +37,13 @@ type BattleScene struct {
 	animationSystem      *system.AnimationSystem
 	cameraSystem         *system.CameraSystem
 
+	// Dialogue overlay (scene-owned singleton, gates the game systems while active)
+	dialogue       *component.Dialogue
+	dialogueSystem *system.DialogueSystem
+
 	// Draw systems
-	renderSystem *system.SpriteSheetRenderSystem
+	renderSystem         *system.SpriteSheetRenderSystem
+	dialogueRenderSystem *system.DialogueRenderSystem
 }
 
 type BattleSceneConfig struct {
@@ -51,6 +58,7 @@ type BattleSceneConfig struct {
 	GoblinFrameWidth    int
 	GoblinFrameHeight   int
 	GoblinAnimFPS       float64
+	DialogueFont        text.Face
 }
 
 func loadImage(fsys fs.FS, path string) (*ebiten.Image, error) {
@@ -151,6 +159,14 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	cameraSystem := system.NewCameraSystem(cameraTargets, positions, camera)
 	renderSystem := system.NewSpriteSheetRenderSystem(positions, animations, spriteSheets, camera)
 
+	portraits, err := loadPortraits(fsys)
+	if err != nil {
+		return nil, err
+	}
+	dialogue := &component.Dialogue{}
+	dialogueSystem := system.NewDialogueSystem(dialogue)
+	dialogueRenderSystem := system.NewDialogueRenderSystem(dialogue, portraits, cfg.DialogueFont)
+
 	return &BattleScene{
 		clock:                component.NewClock(),
 		camera:               camera,
@@ -164,13 +180,46 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		animationStateSystem: animationStateSystem,
 		animationSystem:      animationSystem,
 		cameraSystem:         cameraSystem,
+		dialogue:             dialogue,
+		dialogueSystem:       dialogueSystem,
 		renderSystem:         renderSystem,
+		dialogueRenderSystem: dialogueRenderSystem,
 	}, nil
+}
+
+// loadPortraits builds the portrait-key registry from the embedded character images.
+func loadPortraits(fsys fs.FS) (map[string]*ebiten.Image, error) {
+	keys := []string{"mage", "wolf", "panther"}
+	portraits := make(map[string]*ebiten.Image, len(keys))
+	for _, key := range keys {
+		img, err := loadImage(fsys, "images/characters/"+key+"/portrait.png")
+		if err != nil {
+			return nil, err
+		}
+		portraits[key] = img
+	}
+	return portraits, nil
 }
 
 func (s *BattleScene) Update() error {
 	s.clock.Update(1.0 / float64(ebiten.TPS()))
 	dt := s.clock.DeltaTime()
+
+	// While dialogue is active, gate the game systems off and only advance dialogue,
+	// freezing the world so the player can read without characters moving. We gate here
+	// rather than via clock.Pause: a zeroed dt only stops dt-scaled movement, but the
+	// input-driven systems (velocity/facing/animation) ignore dt, so held keys would still
+	// turn the character and play its walk animation in place.
+	if s.dialogue.Active {
+		s.dialogueSystem.Update(s.world, dt)
+		return nil
+	}
+
+	// Demo trigger: press E to start a sample dialogue.
+	if inpututil.IsKeyJustPressed(ebiten.KeyE) {
+		s.StartDialogue(sampleDialogue())
+		return nil
+	}
 
 	// Update systems in order
 	s.inputSystem.Update(s.world, dt)
@@ -182,6 +231,22 @@ func (s *BattleScene) Update() error {
 	s.cameraSystem.Update(s.world, dt)
 
 	return nil
+}
+
+// StartDialogue opens a dialogue from the given lines. The trigger source (key, script,
+// trigger zone) is the caller's concern and stays decoupled from the dialogue system.
+func (s *BattleScene) StartDialogue(lines []component.DialogueLine) {
+	s.dialogue.Start(lines)
+}
+
+// sampleDialogue is the demo script for manual verification: a portrait line, a portrait-less
+// narration line, and a long line that exercises CJK wrapping.
+func sampleDialogue() []component.DialogueLine {
+	return []component.DialogueLine{
+		{Speaker: "法师", Portrait: "mage", Text: "前方就是哥布林的巢穴了，务必小心。它们成群结队，而且对闯入者毫不留情。"},
+		{Speaker: "", Portrait: "", Text: "（四周一片寂静，只有风声掠过枯草，远处似乎有什么东西在移动。）"},
+		{Speaker: "法师", Portrait: "mage", Text: "准备好了吗？按下空格、回车或鼠标左键即可继续，我们这就出发。"},
+	}
 }
 
 func (s *BattleScene) SetTimeScale(scale float64) {
@@ -223,4 +288,7 @@ func (s *BattleScene) Draw(screen *ebiten.Image) {
 
 	// Draw entities via ECS render system
 	s.renderSystem.Draw(s.world, screen)
+
+	// Dialogue overlay sits on top of the world.
+	s.dialogueRenderSystem.Draw(s.world, screen)
 }

@@ -11,6 +11,9 @@ import (
 	"eternity/internal/scene"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	text "github.com/hajimehoshi/ebiten/v2/text/v2"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
 
 const (
@@ -42,6 +45,11 @@ func New() (*Game, error) {
 		return nil, err
 	}
 
+	dialogueFont, err := loadFont("fonts/WenQuanYiMicroHei.ttf", config.DialogueFontSize)
+	if err != nil {
+		return nil, err
+	}
+
 	cfg := scene.BattleSceneConfig{
 		FloorImagePath:      "images/battle/floor/stone.png",
 		PlayerSpriteSheet:   playerSprite,
@@ -54,6 +62,7 @@ func New() (*Game, error) {
 		GoblinFrameHeight:   goblinFrameHeight,
 		GoblinSpriteColumns: goblinSpriteColumns,
 		GoblinAnimFPS:       goblinAnimFPS,
+		DialogueFont:        dialogueFont,
 	}
 
 	battleScene, err := scene.NewBattleScene(assets.Images, cfg)
@@ -78,6 +87,27 @@ func loadImage(path string) (*ebiten.Image, error) {
 		return nil, err
 	}
 	return ebiten.NewImageFromImage(img), nil
+}
+
+// loadFont parses an embedded TTF into a text.Face at the given pixel size.
+func loadFont(path string, size float64) (text.Face, error) {
+	data, err := assets.Fonts.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	tt, err := opentype.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	face, err := opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    size,
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return text.NewGoXFace(face), nil
 }
 
 func (g *Game) Update() error {
