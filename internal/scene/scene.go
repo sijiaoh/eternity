@@ -1,3 +1,5 @@
+//go:build !test
+
 package scene
 
 import "github.com/hajimehoshi/ebiten/v2"

@@ -72,8 +72,24 @@ func New(bundle *i18n.Bundle) (*Game, error) {
 		return nil, err
 	}
 
+	titleFont, err := loadFont("fonts/WenQuanYiMicroHei.ttf", config.TitleFontSize)
+	if err != nil {
+		return nil, err
+	}
+	promptFont, err := loadFont("fonts/WenQuanYiMicroHei.ttf", config.TitlePromptFontSize)
+	if err != nil {
+		return nil, err
+	}
+
+	// Start on the title screen; pressing Enter swaps in the pre-built battle scene.
+	sceneManager := scene.NewManager(nil)
+	titleScene := scene.NewTitleScene(bundle, titleFont, promptFont, func() {
+		sceneManager.SetScene(battleScene)
+	})
+	sceneManager.SetScene(titleScene)
+
 	return &Game{
-		sceneManager: scene.NewManager(battleScene),
+		sceneManager: sceneManager,
 	}, nil
 }
 

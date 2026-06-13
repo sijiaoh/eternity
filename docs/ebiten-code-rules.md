@@ -9,9 +9,13 @@
 | `ecs` | ECS核心：World、Storage、System接口 |
 | `ecs/system` | 具体System实现（Input、Movement、Render等） |
 | `entity` | 实体工厂函数（组合组件创建实体） |
-| `scene` | 场景生命周期、System调度 |
-| `game` | ebiten.Game实现、场景切换 |
+| `scene` | 场景接口与生命周期、`Manager`场景切换、System调度 |
+| `game` | ebiten.Game实现、组装场景与切换回调 |
 | `i18n` | 多语言文本：key→文本查表、locale 数据文件内嵌、默认语言回退 |
+
+## 场景切换
+
+`Manager`持有当前`Scene`，`SetScene`切换。场景间切换用注入回调解耦——场景不直接依赖`Manager`或目标场景类型，由`game`在组装时注入切换动作（如`TitleScene`的`onStart`换入`BattleScene`）。
 
 ## ECS架构
 
