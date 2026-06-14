@@ -77,14 +77,16 @@ cameraSystem.Update(world, dt)         // 7. 跟随摄像机
 
 ### 创建实体
 
-使用工厂函数组合组件：
+工厂函数只组合出通用角色（位置、移动、朝向、动画、精灵），不绑定「谁被玩家操控/被摄像机跟随」——这是场景层决策。场景在组装时按需附加 `InputControlled`（移动速度随控制语义放在 `InputControlled.Speed`）与 `CameraTarget`：
 
 ```go
-entity.CreateMage(world, components, entity.MageFactoryConfig{
+mage := entity.CreateMage(world, components, entity.MageFactoryConfig{
     X: 2.0, Y: 3.0,
-    Speed: 5.0,
     // ...
 })
+// 由场景决定操控者与摄像机目标
+inputs.Set(mage, component.InputControlled{Speed: 5.0})
+cameraTargets.Set(mage, component.CameraTarget{})
 ```
 
 ## 单位系统

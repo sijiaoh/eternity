@@ -110,13 +110,11 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	aiFollows := ecs.NewStorage[component.AIFollow](32)
 
 	mageComponents := &entity.MageComponents{
-		Positions:     positions,
-		Velocities:    velocities,
-		Inputs:        inputs,
-		Facings:       facings,
-		Animations:    animations,
-		SpriteSheets:  spriteSheets,
-		CameraTargets: cameraTargets,
+		Positions:    positions,
+		Velocities:   velocities,
+		Facings:      facings,
+		Animations:   animations,
+		SpriteSheets: spriteSheets,
 	}
 
 	goblinComponents := &entity.GoblinComponents{
@@ -131,7 +129,6 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	mage := entity.CreateMage(world, mageComponents, entity.MageFactoryConfig{
 		X:           mageX,
 		Y:           mageY,
-		Speed:       5.0, // units per second
 		SizeInUnits: 1.0,
 		SpriteSheet: cfg.MageSpriteSheet,
 		FrameWidth:  cfg.MageFrameWidth,
@@ -139,6 +136,11 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		Columns:     cfg.MageSpriteColumns,
 		AnimFPS:     cfg.MageAnimFPS,
 	})
+
+	// The scene decides who the player drives and where the camera looks: make this mage the
+	// controlled, camera-followed character. Speed is a property of that control, not the mage.
+	inputs.Set(mage, component.InputControlled{Speed: 5.0}) // units per second
+	cameraTargets.Set(mage, component.CameraTarget{})
 
 	// Create goblin if the sprite is present and the scenario doesn't suppress it.
 	if cfg.GoblinSpriteSheet != nil && spawnGoblin(cfg.Situation) {

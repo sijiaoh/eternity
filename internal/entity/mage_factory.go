@@ -11,19 +11,16 @@ import (
 
 // MageComponents holds all storages needed to create the mage entity.
 type MageComponents struct {
-	Positions     *ecs.Storage[component.Position]
-	Velocities    *ecs.Storage[component.Velocity]
-	Inputs        *ecs.Storage[component.InputControlled]
-	Facings       *ecs.Storage[component.Facing]
-	Animations    *ecs.Storage[component.Animation]
-	SpriteSheets  *ecs.Storage[component.SpriteSheet]
-	CameraTargets *ecs.Storage[component.CameraTarget]
+	Positions    *ecs.Storage[component.Position]
+	Velocities   *ecs.Storage[component.Velocity]
+	Facings      *ecs.Storage[component.Facing]
+	Animations   *ecs.Storage[component.Animation]
+	SpriteSheets *ecs.Storage[component.SpriteSheet]
 }
 
 // MageFactoryConfig contains parameters for creating the mage.
 type MageFactoryConfig struct {
 	X, Y        float64
-	Speed       float64
 	SpriteSheet *ebiten.Image
 	FrameWidth  int
 	FrameHeight int
@@ -32,13 +29,14 @@ type MageFactoryConfig struct {
 	SizeInUnits float64 // Target width in world units; 0 = native size
 }
 
-// CreateMage spawns the mage entity (the player-controlled character) with all required components.
+// CreateMage spawns a mage: a generic character (position, movement, facing, animation, sprite).
+// Whether this mage is the one the player controls or the camera follows is the scene's call, so
+// the factory leaves InputControlled and CameraTarget for the scene to attach.
 func CreateMage(w *ecs.World, c *MageComponents, cfg MageFactoryConfig) ecs.Entity {
 	e := w.Spawn()
 
 	c.Positions.Set(e, component.Position{X: cfg.X, Y: cfg.Y})
 	c.Velocities.Set(e, component.Velocity{X: 0, Y: 0})
-	c.Inputs.Set(e, component.InputControlled{Speed: cfg.Speed})
 	c.Facings.Set(e, component.Facing{Direction: component.FacingDown, Walking: false})
 
 	states := []component.AnimationState{
@@ -61,8 +59,6 @@ func CreateMage(w *ecs.World, c *MageComponents, cfg MageFactoryConfig) ecs.Enti
 		Anchor:      component.AnchorCenter(),
 		SizeInUnits: cfg.SizeInUnits,
 	})
-
-	c.CameraTargets.Set(e, component.CameraTarget{})
 
 	return e
 }
