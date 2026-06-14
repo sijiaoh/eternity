@@ -110,6 +110,7 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	velocities := ecs.NewStorage[component.Velocity](64)
 	facings := ecs.NewStorage[component.Facing](64)
 	animations := ecs.NewStorage[component.Animation](64)
+	directionals := ecs.NewStorage[component.DirectionalAnimation](64)
 	spriteSheets := ecs.NewStorage[component.SpriteSheet](64)
 
 	// Mage-specific storages
@@ -132,6 +133,7 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		Velocities:   velocities,
 		Facings:      facings,
 		Animations:   animations,
+		Directionals: directionals,
 		SpriteSheets: spriteSheets,
 	}
 
@@ -141,6 +143,7 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		AIFollows:    aiFollows,
 		Facings:      facings,
 		Animations:   animations,
+		Directionals: directionals,
 		SpriteSheets: spriteSheets,
 	}
 
@@ -210,7 +213,7 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	leashSystem := system.NewLeashSystem(leashes, positions, velocities)
 	movementSystem := system.NewMovementSystem(positions, velocities)
 	facingSystem := system.NewFacingSystem(facings, velocities)
-	animationStateSystem := system.NewAnimationStateSystem(animations, facings)
+	animationStateSystem := system.NewAnimationStateSystem(animations, facings, directionals)
 	animationSystem := system.NewAnimationSystem(animations)
 	cameraSystem := system.NewCameraSystem(cameraTargets, positions, camera)
 	renderSystem := system.NewSpriteSheetRenderSystem(positions, animations, spriteSheets, camera)

@@ -16,6 +16,7 @@ type GoblinComponents struct {
 	AIFollows    *ecs.Storage[component.AIFollow]
 	Facings      *ecs.Storage[component.Facing]
 	Animations   *ecs.Storage[component.Animation]
+	Directionals *ecs.Storage[component.DirectionalAnimation]
 	SpriteSheets *ecs.Storage[component.SpriteSheet]
 }
 
@@ -31,9 +32,8 @@ type GoblinFactoryConfig struct {
 	SizeInUnits float64 // Target width in world units; 0 = native size
 }
 
-// CreateGoblin spawns a goblin entity with follow AI.
-// Each 11-frame row is one facing direction (down/left/up/right), with frame 0
-// as the idle pose — see sprite.source.md for the full sheet layout.
+// CreateGoblin spawns a goblin: a generic character plus follow AI. The per-direction
+// row layout lives in the DirectionalSheetSpec below (see sprite.source.md for the sheet).
 func CreateGoblin(w *ecs.World, c *GoblinComponents, cfg GoblinFactoryConfig) ecs.Entity {
 	e := w.Spawn()
 
@@ -43,17 +43,21 @@ func CreateGoblin(w *ecs.World, c *GoblinComponents, cfg GoblinFactoryConfig) ec
 	c.AIFollows.Set(e, component.AIFollow{Speed: cfg.Speed})
 	c.Facings.Set(e, component.Facing{Direction: component.FacingDown, Walking: false})
 
-	states := []component.AnimationState{
-		{Name: "idle_down", StartFrame: 0, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_down", StartFrame: 0, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "idle_left", StartFrame: 33, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_left", StartFrame: 33, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "idle_up", StartFrame: 22, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_up", StartFrame: 22, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "idle_right", StartFrame: 11, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_right", StartFrame: 11, FrameCount: 8, FPS: cfg.AnimFPS, Loop: true},
+	// Four-directional sheet: 11-frame rows, walk uses the first 8, idle is the row's first frame.
+	spec := component.DirectionalSheetSpec{
+		Directions: component.DirectionsFour,
+		Rows: map[component.FacingDirection]int{
+			component.FacingDown:  0,
+			component.FacingRight: 11,
+			component.FacingUp:    22,
+			component.FacingLeft:  33,
+		},
+		IdleFrames: 1,
+		WalkFrames: 8,
+		FPS:        cfg.AnimFPS,
 	}
-	c.Animations.Set(e, *component.NewAnimation(states))
+	c.Animations.Set(e, *component.NewAnimation(spec.States()))
+	c.Directionals.Set(e, *component.NewDirectionalAnimation(spec.Directions))
 
 	c.SpriteSheets.Set(e, component.SpriteSheet{
 		Image:       cfg.SpriteSheet,

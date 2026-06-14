@@ -140,6 +140,52 @@ entity.CreateMage(world, components, entity.MageFactoryConfig{
 
 缩放比例计算：`scale = UnitsToPixels(SizeInUnits) / FrameWidth`
 
+## 动画系统
+
+三层分离，使用方只设朝向，无需知道自己有几个方向的素材：
+
+| 层 | 类型 | 职责 |
+|---|---|---|
+| `Animation` | component | 纯帧播放：按 `CurrentState` 顺序播帧，无任何方向语义 |
+| `DirectionalAnimation` | component | 解析层：按角色的方向集，把「移动状态 + 朝向」解析成状态名 |
+| `AnimationStateSystem` | system | 接线：`ResolveState` → `SetState`，自身不做方向判断 |
+| `AnimationSystem` | system | 按 `dt` 推进当前状态的帧 |
+
+### 数据流
+
+`FacingSystem` 写 `Facing{Direction, Walking}` → `AnimationStateSystem` 用 `DirectionalAnimation.ResolveState(walking, facing)` 得状态名 → `Animation.SetState(name)` 切换 → `AnimationSystem` 推进帧 → 渲染取 `Animation.Frame()`。
+
+### 状态命名（单一来源）
+
+状态名为 `{idle|walk}_{down|left|up|right}`，由 `component.AnimationStateName(walking, dir)` 统一产出——`DirectionalSheetSpec` 据此造状态、`ResolveState` 据此查状态，二者永不失配。
+
+### 方向集与回退
+
+角色声明一个 `DirectionSet`，`ResolveState` 保证解析结果必落在集合内：
+
+| DirectionSet | 语义 |
+|---|---|
+| `DirectionsFour` | 上下左右各有独立素材，朝向直接采用 |
+| `DirectionsHorizontal` | 仅左右素材；上下移动回退到上一次水平朝向（初始向右） |
+
+### 工厂：单 spec 双产出
+
+工厂用一个 `DirectionalSheetSpec`（方向集 + 每方向行首帧 `Rows` + `IdleFrames`/`WalkFrames` + `FPS`）同时产出动画状态集与方向集，二者同源不会失配。`States()` 为集合内每个方向生成 idle/walk 两态（共享该行首帧，idle 即首帧）。具体行布局以各工厂为准，sprite sheet 见对应 `sprite.source.md`。
+
+```go
+spec := component.DirectionalSheetSpec{
+    Directions: component.DirectionsFour,
+    Rows:       map[component.FacingDirection]int{ /* 方向 → 行首帧 */ },
+    IdleFrames: 1, WalkFrames: 6, FPS: cfg.AnimFPS,
+}
+animations.Set(e, *component.NewAnimation(spec.States()))
+directionals.Set(e, *component.NewDirectionalAnimation(spec.Directions))
+```
+
+### fail-fast
+
+无静默兜底：`SetState` 遇未知状态、`States()` 遇方向缺 `Rows` 行都直接 panic，让配置错误在开发期暴露。正常配置下 `ResolveState` 只产出集合内状态、`States()` 必为其生成对应态，故 panic 不可达。
+
 ## 时间系统
 
 **禁止依赖固定帧率**。所有游戏逻辑必须基于时间（秒），而非帧数。

@@ -15,6 +15,7 @@ type MageComponents struct {
 	Velocities   *ecs.Storage[component.Velocity]
 	Facings      *ecs.Storage[component.Facing]
 	Animations   *ecs.Storage[component.Animation]
+	Directionals *ecs.Storage[component.DirectionalAnimation]
 	SpriteSheets *ecs.Storage[component.SpriteSheet]
 }
 
@@ -39,17 +40,21 @@ func CreateMage(w *ecs.World, c *MageComponents, cfg MageFactoryConfig) ecs.Enti
 	c.Velocities.Set(e, component.Velocity{X: 0, Y: 0})
 	c.Facings.Set(e, component.Facing{Direction: component.FacingDown, Walking: false})
 
-	states := []component.AnimationState{
-		{Name: "idle_down", StartFrame: 0, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_down", StartFrame: 0, FrameCount: 6, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "idle_left", StartFrame: 6, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_left", StartFrame: 6, FrameCount: 6, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "idle_up", StartFrame: 12, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_up", StartFrame: 12, FrameCount: 6, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "idle_right", StartFrame: 18, FrameCount: 1, FPS: cfg.AnimFPS, Loop: true},
-		{Name: "walk_right", StartFrame: 18, FrameCount: 6, FPS: cfg.AnimFPS, Loop: true},
+	// Four-directional sheet: one 6-frame walk row per direction, idle is each row's first frame.
+	spec := component.DirectionalSheetSpec{
+		Directions: component.DirectionsFour,
+		Rows: map[component.FacingDirection]int{
+			component.FacingDown:  0,
+			component.FacingLeft:  6,
+			component.FacingUp:    12,
+			component.FacingRight: 18,
+		},
+		IdleFrames: 1,
+		WalkFrames: 6,
+		FPS:        cfg.AnimFPS,
 	}
-	c.Animations.Set(e, *component.NewAnimation(states))
+	c.Animations.Set(e, *component.NewAnimation(spec.States()))
+	c.Directionals.Set(e, *component.NewDirectionalAnimation(spec.Directions))
 
 	c.SpriteSheets.Set(e, component.SpriteSheet{
 		Image:       cfg.SpriteSheet,

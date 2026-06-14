@@ -9,147 +9,76 @@ import (
 	"eternity/internal/ecs"
 )
 
-func TestAnimationStateSystem_Update(t *testing.T) {
-	w := ecs.NewWorld(10)
-	animations := ecs.NewStorage[component.Animation](10)
-	facings := ecs.NewStorage[component.Facing](10)
-
-	sys := NewAnimationStateSystem(animations, facings)
-
-	states := []component.AnimationState{
-		{Name: "idle_down", StartFrame: 0, FrameCount: 1, FPS: 8, Loop: true},
-		{Name: "walk_down", StartFrame: 0, FrameCount: 6, FPS: 8, Loop: true},
-		{Name: "idle_left", StartFrame: 6, FrameCount: 1, FPS: 8, Loop: true},
-		{Name: "walk_left", StartFrame: 6, FrameCount: 6, FPS: 8, Loop: true},
-	}
-
-	e := w.Spawn()
-	animations.Set(e, *component.NewAnimation(states))
-	facings.Set(e, component.Facing{Direction: component.FacingLeft, Walking: true})
-
-	sys.Update(w, 0.016)
-
-	anim, _ := animations.Get(e)
-	if anim.CurrentState != "walk_left" {
-		t.Errorf("state = %s, want walk_left", anim.CurrentState)
-	}
+type animStateFixture struct {
+	world      *ecs.World
+	sys        *AnimationStateSystem
+	entity     ecs.Entity
+	animations *ecs.Storage[component.Animation]
+	facings    *ecs.Storage[component.Facing]
 }
 
-func TestAnimationStateSystem_IdleState(t *testing.T) {
+// newAnimStateFixture builds a world with one four-directional entity, wired the same way
+// the factories do (Animation + DirectionalAnimation + Facing).
+func newAnimStateFixture() animStateFixture {
 	w := ecs.NewWorld(10)
 	animations := ecs.NewStorage[component.Animation](10)
 	facings := ecs.NewStorage[component.Facing](10)
+	directionals := ecs.NewStorage[component.DirectionalAnimation](10)
 
-	sys := NewAnimationStateSystem(animations, facings)
-
-	states := []component.AnimationState{
-		{Name: "idle_down", StartFrame: 0, FrameCount: 1, FPS: 8, Loop: true},
-		{Name: "walk_down", StartFrame: 0, FrameCount: 6, FPS: 8, Loop: true},
+	spec := component.DirectionalSheetSpec{
+		Directions: component.DirectionsFour,
+		Rows: map[component.FacingDirection]int{
+			component.FacingDown: 0, component.FacingLeft: 6, component.FacingUp: 12, component.FacingRight: 18,
+		},
+		IdleFrames: 1, WalkFrames: 6, FPS: 8,
 	}
 
 	e := w.Spawn()
-	anim := component.NewAnimation(states)
-	// Start in walking state using setAnimationState (same logic the system uses)
-	setAnimationState(anim, "walk_down")
-	animations.Set(e, *anim)
+	animations.Set(e, *component.NewAnimation(spec.States()))
+	directionals.Set(e, *component.NewDirectionalAnimation(spec.Directions))
 	facings.Set(e, component.Facing{Direction: component.FacingDown, Walking: false})
 
-	sys.Update(w, 0.016)
-
-	updatedAnim, _ := animations.Get(e)
-	if updatedAnim.CurrentState != "idle_down" {
-		t.Errorf("state = %s, want idle_down", updatedAnim.CurrentState)
+	return animStateFixture{
+		world:      w,
+		sys:        NewAnimationStateSystem(animations, facings, directionals),
+		entity:     e,
+		animations: animations,
+		facings:    facings,
 	}
 }
 
-func TestAnimationStateSystem_SetStateResetsAnimation(t *testing.T) {
-	w := ecs.NewWorld(10)
-	animations := ecs.NewStorage[component.Animation](10)
-	facings := ecs.NewStorage[component.Facing](10)
+func (f animStateFixture) face(dir component.FacingDirection, walking bool) {
+	f.facings.Set(f.entity, component.Facing{Direction: dir, Walking: walking})
+}
 
-	states := []component.AnimationState{
-		{Name: "idle_down", StartFrame: 0, FrameCount: 6, FPS: 10, Loop: true},
-		{Name: "walk_down", StartFrame: 6, FrameCount: 6, FPS: 12, Loop: true},
+// The system's own job is the wiring: read Facing, resolve through DirectionalAnimation,
+// switch the Animation. Resolution rules and SetState semantics are unit-tested in the
+// component package, so here we only check that facing flows through to the right state
+// for both motion categories.
+func TestAnimationStateSystem_FacingFlowsToState(t *testing.T) {
+	f := newAnimStateFixture()
+
+	f.face(component.FacingLeft, true)
+	f.sys.Update(f.world, 0.016)
+	if got := f.animations.GetPtr(f.entity).CurrentState; got != "walk_left" {
+		t.Errorf("walking left: state = %s, want walk_left", got)
 	}
 
-	e := w.Spawn()
-	anim := component.NewAnimation(states)
-	// Advance the animation
-	anim.Elapsed = 0.15
-	anim.FrameIndex = 1
-	animations.Set(e, *anim)
-	facings.Set(e, component.Facing{Direction: component.FacingDown, Walking: true})
-
-	sys := NewAnimationStateSystem(animations, facings)
-	sys.Update(w, 0.016)
-
-	animPtr := animations.GetPtr(e)
-	if animPtr.CurrentState != "walk_down" {
-		t.Errorf("state = %s, want walk_down", animPtr.CurrentState)
-	}
-	// Switching state should reset frame
-	if animPtr.FrameIndex != 0 {
-		t.Errorf("FrameIndex = %d, want 0 after state change", animPtr.FrameIndex)
-	}
-	if animPtr.Elapsed != 0 {
-		t.Errorf("Elapsed = %f, want 0 after state change", animPtr.Elapsed)
+	f.face(component.FacingDown, false)
+	f.sys.Update(f.world, 0.016)
+	if got := f.animations.GetPtr(f.entity).CurrentState; got != "idle_down" {
+		t.Errorf("idle down: state = %s, want idle_down", got)
 	}
 }
 
-func TestAnimationStateSystem_SameStateNoReset(t *testing.T) {
-	w := ecs.NewWorld(10)
-	animations := ecs.NewStorage[component.Animation](10)
-	facings := ecs.NewStorage[component.Facing](10)
+func TestAnimationStateSystem_SkipsDeadEntities(t *testing.T) {
+	f := newAnimStateFixture()
+	f.face(component.FacingLeft, true)
+	f.world.Despawn(f.entity)
 
-	states := []component.AnimationState{
-		{Name: "walk_down", StartFrame: 0, FrameCount: 6, FPS: 10, Loop: true},
-	}
+	f.sys.Update(f.world, 0.016) // must not touch despawned entity
 
-	e := w.Spawn()
-	anim := component.NewAnimation(states)
-	animations.Set(e, *anim)
-	facings.Set(e, component.Facing{Direction: component.FacingDown, Walking: true})
-
-	sys := NewAnimationStateSystem(animations, facings)
-
-	// First update - set state to walk_down (same as initial)
-	sys.Update(w, 0.016)
-
-	// Manually advance the animation state
-	animPtr := animations.GetPtr(e)
-	animPtr.FrameIndex = 3
-	animPtr.Elapsed = 0.1
-
-	// Second update - same facing, should not reset
-	sys.Update(w, 0.016)
-
-	// Should keep the advanced state since it's the same animation
-	if animPtr.FrameIndex != 3 {
-		t.Errorf("FrameIndex = %d, want 3 (unchanged)", animPtr.FrameIndex)
-	}
-}
-
-func TestFacingAnimationStateName(t *testing.T) {
-	tests := []struct {
-		direction component.FacingDirection
-		walking   bool
-		want      string
-	}{
-		{component.FacingDown, false, "idle_down"},
-		{component.FacingDown, true, "walk_down"},
-		{component.FacingLeft, false, "idle_left"},
-		{component.FacingLeft, true, "walk_left"},
-		{component.FacingRight, false, "idle_right"},
-		{component.FacingRight, true, "walk_right"},
-		{component.FacingUp, false, "idle_up"},
-		{component.FacingUp, true, "walk_up"},
-	}
-
-	for _, tt := range tests {
-		f := &component.Facing{Direction: tt.direction, Walking: tt.walking}
-		got := facingAnimationStateName(f)
-		if got != tt.want {
-			t.Errorf("facingAnimationStateName(%v, %v) = %s, want %s", tt.direction, tt.walking, got, tt.want)
-		}
+	if got := f.animations.GetPtr(f.entity).CurrentState; got == "walk_left" {
+		t.Error("despawned entity should not have its animation state updated")
 	}
 }
