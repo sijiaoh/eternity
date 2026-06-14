@@ -4,7 +4,7 @@
 
 | 包 | 职责 |
 |---|---|
-| `component` | 纯数据组件（Position、Velocity、Animation等） |
+| `component` | 纯数据组件（Position、Velocity、Animation、Faction等） |
 | `config` | 屏幕尺寸等全局常量 |
 | `ecs` | ECS核心：World、Storage、System接口 |
 | `ecs/system` | 具体System实现（Input、Movement、Render等） |
@@ -67,26 +67,28 @@ Scene负责按顺序调用System：
 ```go
 // Update顺序决定逻辑正确性
 inputSystem.Update(world, dt)          // 1. 读取输入
-aiFollowSystem.Update(world, dt)       // 2. AI跟随（更新敌人速度）
-movementSystem.Update(world, dt)       // 3. 应用移动
-facingSystem.Update(world, dt)         // 4. 更新朝向
-animationStateSystem.Update(world, dt) // 5. 设置动画状态
-animationSystem.Update(world, dt)      // 6. 更新动画帧
-cameraSystem.Update(world, dt)         // 7. 跟随摄像机
+aiTargetingSystem.Update(world, dt)    // 2. 按阵营选最近敌人，写入AIFollow.Target
+aiFollowSystem.Update(world, dt)       // 3. AI跟随（朝目标更新敌人速度）
+movementSystem.Update(world, dt)       // 4. 应用移动
+facingSystem.Update(world, dt)         // 5. 更新朝向
+animationStateSystem.Update(world, dt) // 6. 设置动画状态
+animationSystem.Update(world, dt)      // 7. 更新动画帧
+cameraSystem.Update(world, dt)         // 8. 跟随摄像机
 ```
 
 ### 创建实体
 
-工厂函数只组合出通用角色（位置、移动、朝向、动画、精灵），不绑定「谁被玩家操控/被摄像机跟随」——这是场景层决策。场景在组装时按需附加 `InputControlled`（移动速度随控制语义放在 `InputControlled.Speed`）与 `CameraTarget`：
+工厂函数只组合出通用角色（位置、移动、朝向、动画、精灵），不绑定「谁被玩家操控/被摄像机跟随/属哪个阵营」——这些是场景层决策。场景在组装时按需附加 `InputControlled`（移动速度随控制语义放在 `InputControlled.Speed`）、`CameraTarget` 与 `Faction`（敌我归属，决定 AI 目标锁定）：
 
 ```go
 mage := entity.CreateMage(world, components, entity.MageFactoryConfig{
     X: 2.0, Y: 3.0,
     // ...
 })
-// 由场景决定操控者与摄像机目标
+// 由场景决定操控者、摄像机目标与阵营
 inputs.Set(mage, component.InputControlled{Speed: 5.0})
 cameraTargets.Set(mage, component.CameraTarget{})
+factions.Set(mage, component.FactionPlayer)
 ```
 
 ## 单位系统

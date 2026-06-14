@@ -3,12 +3,17 @@ package scene
 import (
 	"eternity/internal/component"
 	"eternity/internal/config"
+	"eternity/internal/ecs"
 	"eternity/internal/i18n"
 	"eternity/internal/scenario"
 )
 
 // goblinSpawnOffset is how far the goblin spawns from the mage by default, in world units.
 const goblinSpawnOffset = 3.0
+
+// allySpawnOffset is how far the friendly mage stands to the player mage's left, in world units.
+// It's fixed rather than scenario-driven — the ally has no debug knobs of its own.
+const allySpawnOffset = 1.5
 
 // The situation resolvers below turn an optional scenario.Battle into the concrete values
 // NewBattleScene needs, applying the scene's normal defaults wherever a field is unset. They
@@ -27,6 +32,24 @@ func resolveMageStart(b scenario.Battle) (x, y float64) {
 // mage so the two spawn near each other as in normal play.
 func resolveGoblinStart(b scenario.Battle, mageX, mageY float64) (x, y float64) {
 	return coalesce(b.GoblinX, mageX+goblinSpawnOffset), coalesce(b.GoblinY, mageY+goblinSpawnOffset)
+}
+
+// resolveAllyStart returns the friendly mage's start position, a fixed offset to the player
+// mage's left. With nothing driving its movement, this is also where the ally stays put.
+func resolveAllyStart(mageX, mageY float64) (x, y float64) {
+	return mageX - allySpawnOffset, mageY
+}
+
+// assignBattleFactions tags each unit with its side. Faction membership is a scene-layer
+// decision (like InputControlled/CameraTarget). Player- and enemy-side entities are passed
+// separately so the conditionally-spawned goblin is simply omitted from enemySide when absent.
+func assignBattleFactions(factions *ecs.Storage[component.Faction], playerSide, enemySide []ecs.Entity) {
+	for _, e := range playerSide {
+		factions.Set(e, component.FactionPlayer)
+	}
+	for _, e := range enemySide {
+		factions.Set(e, component.FactionEnemy)
+	}
 }
 
 // spawnGoblin reports whether the goblin should be created. The default is true, matching normal

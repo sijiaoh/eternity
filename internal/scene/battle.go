@@ -31,8 +31,13 @@ type BattleScene struct {
 	// ECS
 	world *ecs.World
 
+	// factions tags each unit's side. Populated at construction and read each frame by
+	// aiTargetingSystem. Kept on the scene so the data outlives construction.
+	factions *ecs.Storage[component.Faction]
+
 	// Systems (update order matters)
 	inputSystem          *system.InputSystem
+	aiTargetingSystem    *system.AITargetingSystem
 	aiFollowSystem       *system.AIFollowSystem
 	movementSystem       *system.MovementSystem
 	facingSystem         *system.FacingSystem
@@ -109,6 +114,9 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	// Goblin-specific storages
 	aiFollows := ecs.NewStorage[component.AIFollow](32)
 
+	// Faction tags are assigned below, once all the entities exist.
+	factions := ecs.NewStorage[component.Faction](64)
+
 	mageComponents := &entity.MageComponents{
 		Positions:    positions,
 		Velocities:   velocities,
@@ -142,25 +150,44 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	inputs.Set(mage, component.InputControlled{Speed: 5.0}) // units per second
 	cameraTargets.Set(mage, component.CameraTarget{})
 
+	// A friendly mage stands beside the player. It gets no InputControlled, AIFollow or
+	// CameraTarget, so nothing drives its velocity: it stays put and plays its idle animation.
+	allyX, allyY := resolveAllyStart(mageX, mageY)
+	ally := entity.CreateMage(world, mageComponents, entity.MageFactoryConfig{
+		X:           allyX,
+		Y:           allyY,
+		SizeInUnits: 1.0,
+		SpriteSheet: cfg.MageSpriteSheet,
+		FrameWidth:  cfg.MageFrameWidth,
+		FrameHeight: cfg.MageFrameHeight,
+		Columns:     cfg.MageSpriteColumns,
+		AnimFPS:     cfg.MageAnimFPS,
+	})
+
 	// Create goblin if the sprite is present and the scenario doesn't suppress it.
+	var enemySide []ecs.Entity
 	if cfg.GoblinSpriteSheet != nil && spawnGoblin(cfg.Situation) {
 		goblinX, goblinY := resolveGoblinStart(cfg.Situation, mageX, mageY)
-		entity.CreateGoblin(world, goblinComponents, entity.GoblinFactoryConfig{
+		goblin := entity.CreateGoblin(world, goblinComponents, entity.GoblinFactoryConfig{
 			X:     goblinX,
 			Y:     goblinY,
 			Speed: 3.0, // slower than the mage
 			// Body fills ~half the 64px frame; 2.0 keeps it close to mage size.
 			SizeInUnits: 2.0,
-			Target:      mage,
 			SpriteSheet: cfg.GoblinSpriteSheet,
 			FrameWidth:  cfg.GoblinFrameWidth,
 			FrameHeight: cfg.GoblinFrameHeight,
 			Columns:     cfg.GoblinSpriteColumns,
 			AnimFPS:     cfg.GoblinAnimFPS,
 		})
+		enemySide = append(enemySide, goblin)
 	}
 
+	// Tag sides: both mages are the player's, the goblin (when present) is the enemy.
+	assignBattleFactions(factions, []ecs.Entity{mage, ally}, enemySide)
+
 	inputSystem := system.NewInputSystem(inputs, velocities)
+	aiTargetingSystem := system.NewAITargetingSystem(aiFollows, factions, positions)
 	aiFollowSystem := system.NewAIFollowSystem(aiFollows, positions, velocities)
 	movementSystem := system.NewMovementSystem(positions, velocities)
 	facingSystem := system.NewFacingSystem(facings, velocities)
@@ -192,7 +219,9 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		tileSize:             tile.Bounds().Dx(),
 		bundle:               cfg.Bundle,
 		world:                world,
+		factions:             factions,
 		inputSystem:          inputSystem,
+		aiTargetingSystem:    aiTargetingSystem,
 		aiFollowSystem:       aiFollowSystem,
 		movementSystem:       movementSystem,
 		facingSystem:         facingSystem,
@@ -247,6 +276,7 @@ func (s *BattleScene) Update() error {
 
 	// Update systems in order
 	s.inputSystem.Update(s.world, dt)
+	s.aiTargetingSystem.Update(s.world, dt)
 	s.aiFollowSystem.Update(s.world, dt)
 	s.movementSystem.Update(s.world, dt)
 	s.facingSystem.Update(s.world, dt)

@@ -6,6 +6,7 @@ import (
 
 	"eternity/internal/component"
 	"eternity/internal/config"
+	"eternity/internal/ecs"
 	"eternity/internal/i18n"
 	"eternity/internal/scenario"
 )
@@ -50,6 +51,45 @@ func TestResolveGoblinStart(t *testing.T) {
 			t.Fatalf("got (%v, %v), want (7, 8)", x, y)
 		}
 	})
+}
+
+func TestResolveAllyStart(t *testing.T) {
+	// The ally stands at a fixed offset to the player mage's left, at the same height. With no
+	// movement driver attached, this spot is also where it stays — its standstill position.
+	x, y := resolveAllyStart(10, 20)
+	if x != 10-allySpawnOffset || y != 20 {
+		t.Fatalf("got (%v, %v), want (%v, 20) — mage's left at same height", x, y, 10-allySpawnOffset)
+	}
+}
+
+func TestAssignBattleFactions(t *testing.T) {
+	world := ecs.NewWorld(8)
+	factions := ecs.NewStorage[component.Faction](8)
+
+	mage := world.Spawn()
+	ally := world.Spawn()
+	goblin := world.Spawn()
+
+	assignBattleFactions(factions, []ecs.Entity{mage, ally}, []ecs.Entity{goblin})
+
+	for _, tc := range []struct {
+		name string
+		e    ecs.Entity
+		want component.Faction
+	}{
+		{"player mage", mage, component.FactionPlayer},
+		{"ally mage", ally, component.FactionPlayer},
+		{"goblin", goblin, component.FactionEnemy},
+	} {
+		got, ok := factions.Get(tc.e)
+		if !ok {
+			t.Errorf("%s: no faction assigned", tc.name)
+			continue
+		}
+		if got != tc.want {
+			t.Errorf("%s: faction = %v, want %v", tc.name, got, tc.want)
+		}
+	}
 }
 
 func TestSpawnGoblin(t *testing.T) {

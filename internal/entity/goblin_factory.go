@@ -23,7 +23,6 @@ type GoblinComponents struct {
 type GoblinFactoryConfig struct {
 	X, Y        float64
 	Speed       float64
-	Target      ecs.Entity
 	SpriteSheet *ebiten.Image
 	FrameWidth  int
 	FrameHeight int
@@ -40,7 +39,8 @@ func CreateGoblin(w *ecs.World, c *GoblinComponents, cfg GoblinFactoryConfig) ec
 
 	c.Positions.Set(e, component.Position{X: cfg.X, Y: cfg.Y})
 	c.Velocities.Set(e, component.Velocity{X: 0, Y: 0})
-	c.AIFollows.Set(e, component.AIFollow{Target: cfg.Target, Speed: cfg.Speed})
+	// Target is set by AITargetingSystem, not here.
+	c.AIFollows.Set(e, component.AIFollow{Speed: cfg.Speed})
 	c.Facings.Set(e, component.Facing{Direction: component.FacingDown, Walking: false})
 
 	states := []component.AnimationState{
