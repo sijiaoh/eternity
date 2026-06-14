@@ -69,16 +69,19 @@ Scene负责按顺序调用System：
 inputSystem.Update(world, dt)          // 1. 读取输入
 aiTargetingSystem.Update(world, dt)    // 2. 按阵营选最近敌人，写入AIFollow.Target
 aiFollowSystem.Update(world, dt)       // 3. AI跟随（朝目标更新敌人速度）
-movementSystem.Update(world, dt)       // 4. 应用移动
-facingSystem.Update(world, dt)         // 5. 更新朝向
-animationStateSystem.Update(world, dt) // 6. 设置动画状态
-animationSystem.Update(world, dt)      // 7. 更新动画帧
-cameraSystem.Update(world, dt)         // 8. 跟随摄像机
+// 4. 友军按状态行动：普通态尾随，战斗态各自AI（敌人进入主角guardRange即战斗）
+updateParty(combatStateSystem.InCombat(world), trailSystem, rangedAISystem, world, dt)
+movementSystem.Update(world, dt)       // 5. 应用移动
+leashSystem.Update(world, dt)          // 6. 约束：把友军钳回主角guardRange内（仅战斗态生效）
+facingSystem.Update(world, dt)         // 7. 更新朝向
+animationStateSystem.Update(world, dt) // 8. 设置动画状态
+animationSystem.Update(world, dt)      // 9. 更新动画帧
+cameraSystem.Update(world, dt)         // 10. 跟随摄像机
 ```
 
 ### 创建实体
 
-工厂函数只组合出通用角色（位置、移动、朝向、动画、精灵），不绑定「谁被玩家操控/被摄像机跟随/属哪个阵营」——这些是场景层决策。场景在组装时按需附加 `InputControlled`（移动速度随控制语义放在 `InputControlled.Speed`）、`CameraTarget` 与 `Faction`（敌我归属，决定 AI 目标锁定）：
+工厂函数只组合出通用角色（位置、移动、朝向、动画、精灵），不绑定「谁被玩家操控/被摄像机跟随/属哪个阵营」——这些是场景层决策。场景在组装时按需附加 `InputControlled`（移动速度随控制语义放在 `InputControlled.Speed`）、`CameraTarget` 与 `Faction`（敌我归属，决定 AI 目标锁定）。同一 `CreateMage` 通用角色，场景附 `InputControlled` 即成玩家，改附 `Trail`（普通态尾随）/ `RangedAI`+`Leash`（战斗态远程）即成 AI 驱动的友军（两态切换见上文 System 执行顺序）：
 
 ```go
 mage := entity.CreateMage(world, components, entity.MageFactoryConfig{

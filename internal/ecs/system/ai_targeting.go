@@ -34,29 +34,36 @@ func (s *AITargetingSystem) Update(w *ecs.World, dt float64) {
 		if !w.Alive(e) {
 			return
 		}
-		ai.Target = s.nearestEnemy(w, e)
+		ai.Target = nearestEnemy(w, e, s.factions, s.positions)
 	})
 }
 
-// nearestEnemy returns the closest living, positioned unit whose faction opposes e's, or the
-// invalid zero entity when e has no faction or position, or no enemy exists.
-func (s *AITargetingSystem) nearestEnemy(w *ecs.World, e ecs.Entity) ecs.Entity {
-	myFaction, ok := s.factions.Get(e)
+// nearestEnemy returns the closest living, positioned unit whose faction opposes self's, or the
+// invalid zero entity when self has no faction or position, or no enemy exists. It is shared by the
+// units that act on foes — chasers (AIFollow) and fleers (RangedAI) — so "who is my nearest enemy"
+// has a single definition.
+func nearestEnemy(
+	w *ecs.World,
+	self ecs.Entity,
+	factions *ecs.Storage[component.Faction],
+	positions *ecs.Storage[component.Position],
+) ecs.Entity {
+	myFaction, ok := factions.Get(self)
 	if !ok {
 		return ecs.Entity{}
 	}
-	pos, ok := s.positions.Get(e)
+	pos, ok := positions.Get(self)
 	if !ok {
 		return ecs.Entity{}
 	}
 
 	var nearest ecs.Entity
 	bestDist := math.MaxFloat64
-	s.factions.Each(func(other ecs.Entity, faction *component.Faction) {
+	factions.Each(func(other ecs.Entity, faction *component.Faction) {
 		if *faction == myFaction || !w.Alive(other) {
 			return
 		}
-		otherPos, ok := s.positions.Get(other)
+		otherPos, ok := positions.Get(other)
 		if !ok {
 			return
 		}

@@ -31,14 +31,19 @@ type BattleScene struct {
 	// ECS
 	world *ecs.World
 
-	// factions tags each unit's side. Populated at construction and read each frame by
-	// aiTargetingSystem. Kept on the scene so the data outlives construction.
+	// factions tags each unit's side. Populated at construction and read each frame by the
+	// faction-aware AI systems (targeting, combat-state, ranged). Kept on the scene so the data
+	// outlives construction.
 	factions *ecs.Storage[component.Faction]
 
 	// Systems (update order matters)
 	inputSystem          *system.InputSystem
 	aiTargetingSystem    *system.AITargetingSystem
 	aiFollowSystem       *system.AIFollowSystem
+	combatStateSystem    *system.CombatStateSystem
+	trailSystem          *system.TrailSystem
+	rangedAISystem       *system.RangedAISystem
+	leashSystem          *system.LeashSystem
 	movementSystem       *system.MovementSystem
 	facingSystem         *system.FacingSystem
 	animationStateSystem *system.AnimationStateSystem
@@ -114,6 +119,11 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	// Goblin-specific storages
 	aiFollows := ecs.NewStorage[component.AIFollow](32)
 
+	// Ally-specific storages: Trail drives the normal state, RangedAI + Leash the combat state.
+	trails := ecs.NewStorage[component.Trail](8)
+	rangedAIs := ecs.NewStorage[component.RangedAI](8)
+	leashes := ecs.NewStorage[component.Leash](8)
+
 	// Faction tags are assigned below, once all the entities exist.
 	factions := ecs.NewStorage[component.Faction](64)
 
@@ -147,11 +157,11 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 
 	// The scene decides who the player drives and where the camera looks: make this mage the
 	// controlled, camera-followed character. Speed is a property of that control, not the mage.
-	inputs.Set(mage, component.InputControlled{Speed: 5.0}) // units per second
+	inputs.Set(mage, component.InputControlled{Speed: playerSpeed})
 	cameraTargets.Set(mage, component.CameraTarget{})
 
-	// A friendly mage stands beside the player. It gets no InputControlled, AIFollow or
-	// CameraTarget, so nothing drives its velocity: it stays put and plays its idle animation.
+	// A friendly mage joins the party. Unlike the player it gets no InputControlled or
+	// CameraTarget; the scene instead drives it with a Trail, linked in below.
 	allyX, allyY := resolveAllyStart(mageX, mageY)
 	ally := entity.CreateMage(world, mageComponents, entity.MageFactoryConfig{
 		X:           allyX,
@@ -186,9 +196,18 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 	// Tag sides: both mages are the player's, the goblin (when present) is the enemy.
 	assignBattleFactions(factions, []ecs.Entity{mage, ally}, enemySide)
 
+	// Arm each ally for both states: a trailing line behind the player (normal) and ranged combat
+	// leashed to the player (combat). updateParty picks which acts each frame.
+	linkTrailFormation(trails, mage, []ecs.Entity{ally})
+	linkRangedCombat(rangedAIs, leashes, mage, []ecs.Entity{ally})
+
 	inputSystem := system.NewInputSystem(inputs, velocities)
 	aiTargetingSystem := system.NewAITargetingSystem(aiFollows, factions, positions)
 	aiFollowSystem := system.NewAIFollowSystem(aiFollows, positions, velocities)
+	combatStateSystem := system.NewCombatStateSystem(factions, positions, mage, guardRange)
+	trailSystem := system.NewTrailSystem(trails, positions, velocities)
+	rangedAISystem := system.NewRangedAISystem(rangedAIs, factions, positions, velocities)
+	leashSystem := system.NewLeashSystem(leashes, positions, velocities)
 	movementSystem := system.NewMovementSystem(positions, velocities)
 	facingSystem := system.NewFacingSystem(facings, velocities)
 	animationStateSystem := system.NewAnimationStateSystem(animations, facings)
@@ -223,6 +242,10 @@ func NewBattleScene(fsys fs.FS, cfg BattleSceneConfig) (*BattleScene, error) {
 		inputSystem:          inputSystem,
 		aiTargetingSystem:    aiTargetingSystem,
 		aiFollowSystem:       aiFollowSystem,
+		combatStateSystem:    combatStateSystem,
+		trailSystem:          trailSystem,
+		rangedAISystem:       rangedAISystem,
+		leashSystem:          leashSystem,
 		movementSystem:       movementSystem,
 		facingSystem:         facingSystem,
 		animationStateSystem: animationStateSystem,
@@ -278,7 +301,11 @@ func (s *BattleScene) Update() error {
 	s.inputSystem.Update(s.world, dt)
 	s.aiTargetingSystem.Update(s.world, dt)
 	s.aiFollowSystem.Update(s.world, dt)
+	// Allies act by state: trailing normally, their combat AI once InCombat. Leash runs after
+	// movement because it constrains the integrated position, not the velocity.
+	updateParty(s.combatStateSystem.InCombat(s.world), s.trailSystem, s.rangedAISystem, s.world, dt)
 	s.movementSystem.Update(s.world, dt)
+	s.leashSystem.Update(s.world, dt)
 	s.facingSystem.Update(s.world, dt)
 	s.animationStateSystem.Update(s.world, dt)
 	s.animationSystem.Update(s.world, dt)
