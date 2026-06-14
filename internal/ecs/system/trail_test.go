@@ -19,18 +19,18 @@ func newTrailFixture() (*ecs.World, *ecs.Storage[component.Position], *ecs.Stora
 	return w, positions, velocities, trails, NewTrailSystem(trails, positions, velocities)
 }
 
-// Beyond the gap, the follower heads straight at its leader at exactly Speed: direction is
+// Beyond Gap+SlowRadius, the follower heads straight at its leader at exactly Speed: direction is
 // normalized (so distance doesn't inflate the velocity) and then scaled by Speed.
 func TestTrailSystem_MovesTowardLeaderAtSpeed(t *testing.T) {
 	w, positions, velocities, trails, sys := newTrailFixture()
 
 	leader := w.Spawn()
-	positions.Set(leader, component.Position{X: 3, Y: 4}) // distance 5, well beyond the gap
+	positions.Set(leader, component.Position{X: 3, Y: 4}) // distance 5, beyond Gap+SlowRadius (3)
 
 	follower := w.Spawn()
 	positions.Set(follower, component.Position{X: 0, Y: 0})
 	velocities.Set(follower, component.Velocity{})
-	trails.Set(follower, component.Trail{Leader: leader, Speed: 10, Gap: 1})
+	trails.Set(follower, component.Trail{Leader: leader, Speed: 10, Gap: 1, SlowRadius: 2})
 
 	sys.Update(w, 0)
 
@@ -38,6 +38,53 @@ func TestTrailSystem_MovesTowardLeaderAtSpeed(t *testing.T) {
 	vel, _ := velocities.Get(follower)
 	if math.Abs(vel.X-6) > 0.001 || math.Abs(vel.Y-8) > 0.001 {
 		t.Errorf("velocity = (%v, %v), want (6, 8)", vel.X, vel.Y)
+	}
+}
+
+// Within the SlowRadius band the desired speed ramps down linearly with distance, so the follower
+// eases in rather than charging at full Speed and slamming to a halt. The sample sits a quarter of
+// the way into the band (an asymmetric point) so the assertion pins the ramp as linear: an eased
+// curve like smoothstep would also pass at the midpoint but not here.
+func TestTrailSystem_DeceleratesWithinSlowRadius(t *testing.T) {
+	w, positions, velocities, trails, sys := newTrailFixture()
+
+	leader := w.Spawn()
+	positions.Set(leader, component.Position{X: 1.5, Y: 0}) // 0.5 into the 2-unit band past the gap
+
+	follower := w.Spawn()
+	positions.Set(follower, component.Position{X: 0, Y: 0})
+	velocities.Set(follower, component.Velocity{})
+	trails.Set(follower, component.Trail{Leader: leader, Speed: 6, Gap: 1, SlowRadius: 2})
+
+	sys.Update(w, 0)
+
+	// speed = 6 * (1.5-1)/2 = 1.5, straight along +X. (smoothstep at t=0.25 would give ~0.94.)
+	vel, _ := velocities.Get(follower)
+	if math.Abs(vel.X-1.5) > 0.001 || math.Abs(vel.Y) > 0.001 {
+		t.Errorf("velocity = (%v, %v), want (1.5, 0)", vel.X, vel.Y)
+	}
+}
+
+// Just past the gap the ramped speed falls below trailStopSpeed, so the follower stops outright
+// instead of creeping — otherwise the residual velocity would read as "walking" and the ally would
+// march in place after the player halts.
+func TestTrailSystem_StopsInsideDeadzone(t *testing.T) {
+	w, positions, velocities, trails, sys := newTrailFixture()
+
+	leader := w.Spawn()
+	positions.Set(leader, component.Position{X: 1.01, Y: 0}) // barely past the gap
+
+	follower := w.Spawn()
+	positions.Set(follower, component.Position{X: 0, Y: 0})
+	velocities.Set(follower, component.Velocity{X: 6, Y: 0})
+	trails.Set(follower, component.Trail{Leader: leader, Speed: 6, Gap: 1, SlowRadius: 2})
+
+	sys.Update(w, 0)
+
+	// speed = 6 * 0.01/2 = 0.03 < trailStopSpeed, so velocity snaps to exactly zero.
+	vel, _ := velocities.Get(follower)
+	if vel.X != 0 || vel.Y != 0 {
+		t.Errorf("velocity inside deadzone = (%v, %v), want (0, 0)", vel.X, vel.Y)
 	}
 }
 

@@ -35,8 +35,9 @@ func TestLinkTrailFormation_ChainsBehindLeader(t *testing.T) {
 	if !ok || secondTrail.Leader != first {
 		t.Errorf("second.Leader = %v, want first %v", secondTrail.Leader, first)
 	}
-	if firstTrail.Speed != allySpeed() || firstTrail.Gap != trailGap {
-		t.Errorf("first trail tuning = (speed %v, gap %v), want (%v, %v)", firstTrail.Speed, firstTrail.Gap, allySpeed(), trailGap)
+	if firstTrail.Speed != allySpeed() || firstTrail.Gap != trailGap || firstTrail.SlowRadius != trailSlowRadius {
+		t.Errorf("first trail tuning = (speed %v, gap %v, slowRadius %v), want (%v, %v, %v)",
+			firstTrail.Speed, firstTrail.Gap, firstTrail.SlowRadius, allySpeed(), trailGap, trailSlowRadius)
 	}
 
 	// The leader itself is just the anchor — it gets no Trail of its own.

@@ -17,6 +17,10 @@ const (
 	// trailGap is how far behind its leader an ally settles, in units — about one body length, so
 	// the line reads as single-file without the sprites overlapping.
 	trailGap = 1.0
+	// trailSlowRadius is the arrival-steering deceleration band past trailGap, in units. The ally
+	// runs at full speed until it closes to within this band, then eases to a stop at the gap, so it
+	// converges smoothly on the player instead of sprinting up and slamming to a halt.
+	trailSlowRadius = 2.0
 )
 
 // allySpeed derives an ally's movement speed from the player's, expressing "allies move at 1.2× the
@@ -32,7 +36,7 @@ func allySpeed() float64 {
 func linkTrailFormation(trails *ecs.Storage[component.Trail], leader ecs.Entity, followers []ecs.Entity) {
 	ahead := leader
 	for _, f := range followers {
-		trails.Set(f, component.Trail{Leader: ahead, Speed: allySpeed(), Gap: trailGap})
+		trails.Set(f, component.Trail{Leader: ahead, Speed: allySpeed(), Gap: trailGap, SlowRadius: trailSlowRadius})
 		ahead = f
 	}
 }
