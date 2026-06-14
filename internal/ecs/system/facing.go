@@ -1,6 +1,8 @@
 package system
 
 import (
+	"math"
+
 	"eternity/internal/component"
 	"eternity/internal/ecs"
 )
@@ -32,17 +34,29 @@ func (s *FacingSystem) Update(w *ecs.World, dt float64) {
 		}
 
 		facing.Walking = vel.X != 0 || vel.Y != 0
-
-		// Priority: horizontal over vertical (common in 2D games)
-		if vel.X < 0 {
-			facing.Direction = component.FacingLeft
-		} else if vel.X > 0 {
-			facing.Direction = component.FacingRight
-		} else if vel.Y < 0 {
-			facing.Direction = component.FacingUp
-		} else if vel.Y > 0 {
-			facing.Direction = component.FacingDown
+		if !facing.Walking {
+			// No movement: keep the current facing direction.
+			return
 		}
-		// If no movement, keep the current facing direction
+
+		// Symmetric 45° sectors: each axis direction owns its ±45° arc, so the
+		// dominant velocity component decides facing. Diagonals resolve to the
+		// nearer axis instead of always snapping horizontal.
+		//
+		// On the diagonal (|vel.X| == |vel.Y|) tie-break to horizontal: a fixed,
+		// predictable rule matching the project's prior horizontal-priority feel.
+		if math.Abs(vel.X) >= math.Abs(vel.Y) {
+			if vel.X < 0 {
+				facing.Direction = component.FacingLeft
+			} else {
+				facing.Direction = component.FacingRight
+			}
+		} else {
+			if vel.Y < 0 {
+				facing.Direction = component.FacingUp
+			} else {
+				facing.Direction = component.FacingDown
+			}
+		}
 	})
 }
